@@ -60,7 +60,7 @@ class FixedAsset(BaseModel):
     # usage: str = Field(...)
     value: str = Field(...)
     date: str = Field(...)
-    committee: list = ['Dorota Szadkowska']
+    committee: list = []
     material_duty_person: str = Field(...)
     psp: str = Field(...)
     mpk: str = Field(...)
