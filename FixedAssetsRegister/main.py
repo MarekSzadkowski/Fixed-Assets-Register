@@ -114,8 +114,23 @@ def read_wordbook_data() -> list[tuple]:
 
 def process_workbook_data(rows: list[tuple]) -> None:
     selected_items = select_fixed_assets(rows)
-    with open('fixed_asstes.db', 'wb') as stream:
+    with open('fixed_assets.db', 'wb') as stream:
         dump(selected_items, stream)
+
+def load_fixed_assets() -> list[FixedAsset]:
+    try:
+        with open('fixed_assets.db', 'rb') as reader:
+            fixed_assets = load(reader, encoding='utf-8')
+    except FileNotFoundError:
+        exit_with_info('File \'fixed_assets.db\' cannot be opened.')
+    if fixed_assets is None:
+        return []
+    else:
+        return fixed_assets
+
+def print_fixed_assets(fixed_assets: list[FixedAsset]) -> None:
+    for t, n, fa in fixed_assets:
+        print(n, f'{t[0]}-{t[1]}', fa)
 
 @click.group(invoke_without_command=True)  
 @click.pass_context
@@ -123,6 +138,11 @@ def cli(ctx):
     if ctx.invoked_subcommand is None:
         wordbook_data = read_wordbook_data()
         process_workbook_data(wordbook_data)
+
+@cli.command()
+def report():
+    fixed_assets = load_fixed_assets()
+    print_fixed_assets(fixed_assets)
 
 @cli.command()
 def config():
