@@ -48,20 +48,22 @@ class App_Settings(BaseModel):
             print(f'Write error: (e)')
 
 
-FA_TEMPLATE = 'FA - template.xltx'
-
 class FixedAsset(BaseModel):
     date: str = Field(...)
     name_of_item: str = Field(...)
-    characteristics: Optional[str] = ''
+    # characteristics: Optional[str] = ''
     invoice: str = Field(...)
     invoice_date: str = Field(...)
     issuer: str = Field(...)
     # usage: str = Field(...)
     value: str = Field(...)
     date: str = Field(...)
-    committee: list = []
     material_duty_person: str = Field(...)
     psp: str = Field(...)
-    mpk: str = Field(...)
+    cost_center: str = Field(...)
     inventory_number: str = Field(...)
+
+class FixedAssetDocument(FixedAsset):
+    FA_TEMPLATE: str = 'FA - template.xltx'
+    document_name: str = Field(...)
+    committee: list = ['John Smith', 'Jane Doe']

@@ -11,7 +11,7 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import click
 
-from models import App_Settings, FixedAsset
+from models import App_Settings, FixedAsset, FixedAssetDocument
 
 
 def exit_with_info(info: str, do_exit=True) -> None:
@@ -52,9 +52,18 @@ def obtain_last_column_from_worksheet(sheet: Worksheet) -> int:
     return 0
 
 def skip_on_pattern(value: str) -> bool:
+    '''
+    True if data belongs to a group that makes an asset - marked as 'do '
+    '''
     return value[:3] == 'do '
 
-def create_document_name(row: tuple) -> tuple[str, str] | None:
+def create_document_name(row: tuple) -> str | None:
+    '''
+    Unit and six last digits from the inventory number.
+    Returns None if serial contains something else than digits, as it means
+    uncomplete stuff - something is currently being built and it costs are
+    not known yet.
+    '''
     if row[2] is not None:
         serial = row[2][-6:]
         for char in serial:
@@ -67,12 +76,132 @@ def fix_date(_date: Any) -> str:
         _date = ''
     else:
         try:
-            _date = _date.strftime('%Y-%m-%d')
+            _date = _date.strftime('%d-%m-%Y')
         except AttributeError:
-            pass
+            # date may be given as string not complying the actual
+            # standards i.e as 'date,date' in this case the former is taken.
+            _date = _date.strip()
+            if ',' in _date:
+                _date, sparse =_date.replace(' ', '').split(',')
+            if ' ' in _date:
+                _date, sparse = _date.split(' ')
     return _date
 
+def financial_cost_values(financial_source: str) -> list[str, str] | None:
+    '''
+    Returns a list of psp and cost_center elements if financial_source is found
+    in the dictionary below. None oterwise.
+    '''
+    financial_sources = {
+        '550-D111-00-1110000': {'psp': '0801-D111-00011-01', 'cost_center': '1110000'},
+        '550-D111-00-1110002': {'psp': '0801-D111-00011-01', 'cost_center': '1110002'},
+        '550-D111-00-1110003': {'psp': '0801-D111-00011-01', 'cost_center': '1110003'},
+        '550-D111-00-1110100': {'psp': '0801-D111-00011-01', 'cost_center': '1110100'},
+        '550-D111-00-1110102': {'psp': '0801-D111-00011-01', 'cost_center': '1110102'},
+        '550-D111-00-1110103': {'psp': '0801-D111-00011-01', 'cost_center': '1110103'},
+        '550-D111-00-1110104': {'psp': '0801-D111-00011-01', 'cost_center': '1110104'},
+        '550-D111-00-1110105': {'psp': '0801-D111-00011-01', 'cost_center': '1110105'},
+        '550-D111-00-1110108': {'psp': '0801-D111-00011-01', 'cost_center': '1110108'},
+        '550-D111-00-1110109': {'psp': '0801-D111-00011-01', 'cost_center': '1110109'},
+        '550-D111-00-1110111': {'psp': '0801-D111-00011-01', 'cost_center': '1110111'},
+        '550-D111-00-1110112': {'psp': '0801-D111-00011-01', 'cost_center': '1110112'},
+        '550-D111-00-1110113': {'psp': '0801-D111-00011-01', 'cost_center': '1110113'},
+        '550-D111-00-1110114': {'psp': '0801-D111-00011-01', 'cost_center': '1110114'},
+        '550-D111-00-1110115': {'psp': '0801-D111-00011-01', 'cost_center': '1110115'},
+        '550-D111-00-1110116': {'psp': '0801-D111-00011-01', 'cost_center': '1110116'},
+        '550-D111-00-1110119': {'psp': '0801-D111-00011-01', 'cost_center': '1110119'},
+        '550-D111-00-1110200': {'psp': '0801-D111-00011-01', 'cost_center': '1110200'},
+        '550-D111-00-1110300': {'psp': '0801-D111-00011-01', 'cost_center': '1110300'},
+        '550-D111-00-1112000': {'psp': '0801-D111-00011-01', 'cost_center': '1112000'},
+        '550-D111-00-1113300': {'psp': '0801-D111-00011-01', 'cost_center': '1113300'},
+        '550-D111-00-1114000': {'psp': '0801-D111-00011-01', 'cost_center': '1114000'},
+        '550-D111-00-1115100': {'psp': '0801-D111-00011-01', 'cost_center': '1115100'},
+        '550-D111-00-1119000': {'psp': '0801-D111-00011-01', 'cost_center': '1119000'},
+        '550-D111-00-1119004': {'psp': '0801-D111-00011-01', 'cost_center': '1119004'},
+        '550-D111-00-1119801': {'psp': '0801-D111-00011-01', 'cost_center': '1119801'},
+        '550-D111-00-1119802': {'psp': '0801-D111-00011-01', 'cost_center': '1119802'},
+        '501-D111-01-1110000': {'psp': '0801-D111-50101-01', 'cost_center': '1110000'},
+        '501-D111-01-1110002': {'psp': '0801-D111-50101-01', 'cost_center': '1110002'},
+        '501-D111-01-1110003': {'psp': '0801-D111-50101-01', 'cost_center': '1110003'},
+        '501-D111-01-1110100': {'psp': '0801-D111-50101-01', 'cost_center': '1110100'},
+        '501-D111-01-1110102': {'psp': '0801-D111-50101-01', 'cost_center': '1110102'},
+        '501-D111-01-1110103': {'psp': '0801-D111-50101-01', 'cost_center': '1110103'},
+        '501-D111-01-1110104': {'psp': '0801-D111-50101-01', 'cost_center': '1110104'},
+        '501-D111-01-1110105': {'psp': '0801-D111-50101-01', 'cost_center': '1110105'},
+        '501-D111-01-1110108': {'psp': '0801-D111-50101-01', 'cost_center': '1110108'},
+        '501-D111-01-1110109': {'psp': '0801-D111-50101-01', 'cost_center': '1110109'},
+        '501-D111-01-1110111': {'psp': '0801-D111-50101-01', 'cost_center': '1110111'},
+        '501-D111-01-1110112': {'psp': '0801-D111-50101-01', 'cost_center': '1110112'},
+        '501-D111-01-1110113': {'psp': '0801-D111-50101-01', 'cost_center': '1110113'},
+        '501-D111-01-1110114': {'psp': '0801-D111-50101-01', 'cost_center': '1110114'},
+        '501-D111-01-1110115': {'psp': '0801-D111-50101-01', 'cost_center': '1110115'},
+        '501-D111-01-1110116': {'psp': '0801-D111-50101-01', 'cost_center': '1110116'},
+        '501-D111-01-1110119': {'psp': '0801-D111-50101-01', 'cost_center': '1110119'},
+        '501-D111-01-1110200': {'psp': '0801-D111-50101-01', 'cost_center': '1110200'},
+        '501-D111-01-1110300': {'psp': '0801-D111-50101-01', 'cost_center': '1110300'},
+        '501-D111-01-1112000': {'psp': '0801-D111-50101-01', 'cost_center': '1112000'},
+        '501-D111-01-1113300': {'psp': '0801-D111-50101-01', 'cost_center': '1113300'},
+        '501-D111-01-1114000': {'psp': '0801-D111-50101-01', 'cost_center': '1114000'},
+        '501-D111-01-1115100': {'psp': '0801-D111-50101-01', 'cost_center': '1115100'},
+        '501-D111-01-1119000': {'psp': '0801-D111-50101-01', 'cost_center': '1119000'},
+        '501-D111-01-1119004': {'psp': '0801-D111-50101-01', 'cost_center': '1119004'},
+        '501-D111-01-1119801': {'psp': '0801-D111-50101-01', 'cost_center': '1119801'},
+        '501-D111-01-1119802': {'psp': '0801-D111-50101-01', 'cost_center': '1119802'},
+        '500-D111-01-1110000': {'psp': '0801-D111-00003-01', 'cost_center': '1110000'},
+        '500-D111-01-1110002': {'psp': '0801-D111-00003-01', 'cost_center': '1110002'},
+        '500-D111-01-1110003': {'psp': '0801-D111-00003-01', 'cost_center': '1110003'},
+        '500-D111-01-1110100': {'psp': '0801-D111-00003-01', 'cost_center': '1110100'},
+        '500-D111-01-1110102': {'psp': '0801-D111-00003-01', 'cost_center': '1110102'},
+        '500-D111-01-1110103': {'psp': '0801-D111-00003-01', 'cost_center': '1110103'},
+        '500-D111-01-1110104': {'psp': '0801-D111-00003-01', 'cost_center': '1110104'},
+        '500-D111-01-1110105': {'psp': '0801-D111-00003-01', 'cost_center': '1110105'},
+        '500-D111-01-1110108': {'psp': '0801-D111-00003-01', 'cost_center': '1110108'},
+        '500-D111-01-1110109': {'psp': '0801-D111-00003-01', 'cost_center': '1110109'},
+        '500-D111-01-1110111': {'psp': '0801-D111-00003-01', 'cost_center': '1110111'},
+        '500-D111-01-1110112': {'psp': '0801-D111-00003-01', 'cost_center': '1110112'},
+        '500-D111-01-1110113': {'psp': '0801-D111-00003-01', 'cost_center': '1110113'},
+        '500-D111-01-1110114': {'psp': '0801-D111-00003-01', 'cost_center': '1110114'},
+        '500-D111-01-1110115': {'psp': '0801-D111-00003-01', 'cost_center': '1110115'},
+        '500-D111-01-1110116': {'psp': '0801-D111-00003-01', 'cost_center': '1110116'},
+        '500-D111-01-1110119': {'psp': '0801-D111-00003-01', 'cost_center': '1110119'},
+        '500-D111-01-1110200': {'psp': '0801-D111-00003-01', 'cost_center': '1110200'},
+        '500-D111-01-1110300': {'psp': '0801-D111-00003-01', 'cost_center': '1110300'},
+        '500-D111-01-1112000': {'psp': '0801-D111-00003-01', 'cost_center': '1112000'},
+        '500-D111-01-1113300': {'psp': '0801-D111-00003-01', 'cost_center': '1113300'},
+        '500-D111-01-1114000': {'psp': '0801-D111-00003-01', 'cost_center': '1114000'},
+        '500-D111-01-1115100': {'psp': '0801-D111-00003-01', 'cost_center': '1115100'},
+        '500-D111-01-1119000': {'psp': '0801-D111-00003-01', 'cost_center': '1119000'},
+        '500-D111-01-1119004': {'psp': '0801-D111-00003-01', 'cost_center': '1119004'},
+        '500-D111-01-1119801': {'psp': '0801-D111-00003-01', 'cost_center': '1119801'},
+        '500-D111-01-1119802': {'psp': '0801-D111-00003-01', 'cost_center': '1119802'},
+        'pozostałość śr. budżetowych z lat ubiegłych':
+            {'psp': '0801-D111-00110-01', 'cost_center': ''},
+        '500-12/Twórcy ': {'psp': '0801-D111-00010-01', 'cost_center': '1110000'},
+        '500-D111-12-1119000': {'psp': '0801-D111-00100-01', 'cost_center': '1119000'},
+        '501-D111-20-': {'psp': '0801-D111-50120-01', 'cost_center': '1110000'},
+    }
+    if financial_source in financial_sources:
+        return [
+            financial_sources[financial_source]['psp'],
+            financial_sources[financial_source]['cost_center'],
+        ]
+    else:
+        return None
+
 def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
+    '''
+    If financial source (row[3]) is given (which is mostly true),
+    it is translated to psp and cost_center repectivly
+    '''
+    if row[3] is None:
+        psp = cost_center = ''
+    else:
+        source = financial_cost_values(row[3])
+        if source is None:
+            psp = cost_center = str(row[3])
+        else:
+            psp, cost_center = source
+
     return FixedAsset(
         date=fix_date(row[11]),
         name_of_item=row[6],
@@ -81,30 +210,68 @@ def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
         issuer=str(row[10]),
         value=str(row[8]),
         material_duty_person=str(row[13]),
-        psp=str(row[3]),
-        mpk=str(row[3]),
+        psp=psp,
+        cost_center=cost_center,
         inventory_number=row[2],
     )
-    
-def select_fixed_assets(rows: list[tuple]) -> list[tuple, tuple]:
+
+def select_fixed_asset_elements(rows: list[tuple]) -> list[tuple, FixedAsset]:
+    '''
+    The wordbook I was given had foliwong 16 columns:
+    #. ordinal number: it represents an invoice or a group of them,
+       may repeat itself many times,
+       may also be skipped, AFTER it has been specified once.
+    #. unused here
+    #. inventory number
+    #. financial source - probably the most important column in thw wordbook,
+       as it constitutes the fields of psp and cost_center.
+    #. invoice number
+    #. invoice date
+    #. name of a product/asset
+    #. quantity (uusally 1)
+    #. price
+    #. value of the two above (formula), only this column is used here
+    #. producent/supplier
+    #. registering date - when the asset was accepted to the register
+    #. unit - the devision an asset belongs to
+    #. materia duty person
+    #. 15-16 unused here
+    '''
     selected_elements = []
     for i, row in enumerate(rows):
-        if row[0] is None or row[0] == 'xx'  or row[2] is None or skip_on_pattern(row[2]):
+        if row[0] is None or row[2] is None:
             continue
-        ot_name = create_document_name(row)
-        if ot_name is not None:
+        if skip_on_pattern(row[2]) and i > 0 and row[0] == rows[i - 1][0]:
+                continue
+
+        fix_asset_name_tuple = create_document_name(row)
+        if fix_asset_name_tuple is not None:
             try:
-                fa = create_fixed_asset(row)
+                fixed_asset = create_fixed_asset(row)
             except TypeError:
-                fa = None
-            selected_elements.append([ot_name,
-                                      row[0],
-                                      fa])
+                # shouldn,t happen but it's a good way to find
+                # data which might cause a problem
+                fixed_asset = None
+            selected_elements.append([fix_asset_name_tuple, fixed_asset])
     return selected_elements
 
-def check_serials(elemets: list[tuple, tuple]) -> list[tuple]:
-    return elemets
-    
+def check_serials(elemets: list[tuple, FixedAsset]) -> list[FixedAsset] | None:
+    '''
+    Returns None if all serials are unique, otherwise a list
+    of doubled elements.
+    '''
+    # Well, it appeared I got wrong data on entry, it's unreliable though!
+    return []
+
+    serials = set()
+    for t, fa in elemets:
+        unit, serial = t
+        if serial is None or serial == '':
+            pass
+        serials.add(serial)
+    # return None
+    # return elemets
+
 def read_wordbook_data() -> list[tuple]:
     app_settings = App_Settings()
     wordbook: Workbook = get_wordbook(app_settings.wb_filename)  # type: ignore
@@ -113,9 +280,18 @@ def read_wordbook_data() -> list[tuple]:
     return rows
 
 def process_workbook_data(rows: list[tuple]) -> None:
-    selected_items = select_fixed_assets(rows)
-    with open('fixed_assets.db', 'wb') as stream:
-        dump(selected_items, stream)
+    '''
+    Imports selected data from a wordbook and stores it
+    in a pickle DB file,
+    '''
+    selected_items = select_fixed_asset_elements(rows)
+    serials = check_serials(selected_items)
+    if serials:
+        [print(s) for s in serials]
+        exit_with_info('')
+    else:
+        with open('fixed_assets.db', 'wb') as stream:
+            dump(selected_items, stream)
 
 def load_fixed_assets() -> list[FixedAsset]:
     try:
@@ -129,20 +305,52 @@ def load_fixed_assets() -> list[FixedAsset]:
         return fixed_assets
 
 def print_fixed_assets(fixed_assets: list[FixedAsset]) -> None:
-    for t, n, fa in fixed_assets:
-        print(n, f'{t[0]}-{t[1]}', fa)
+    for t, fa in fixed_assets:
+        print(f'{t[0]}-{t[1]}\n', fa)
 
-@click.group(invoke_without_command=True)  
+@click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
+    '''
+    This allows to use our proggie w/o any parameter,
+    specyfying the default one.
+    '''
     if ctx.invoked_subcommand is None:
-        wordbook_data = read_wordbook_data()
-        process_workbook_data(wordbook_data)
+        report()
+
+@cli.command()
+def wb() -> None:
+    '''
+    Imports wordbook data to a simple DB (pickle)
+    '''
+    wordbook_data = read_wordbook_data()
+    process_workbook_data(wordbook_data)
 
 @cli.command()
 def report():
     fixed_assets = load_fixed_assets()
     print_fixed_assets(fixed_assets)
+
+@cli.command()
+def fa() -> None:
+    '''
+    Still to do - throws an error ATM
+    '''
+    fixed_assets = load_fixed_assets()
+    for t, fa in fixed_assets:
+        try:
+            fa_document = FixedAssetDocument(**fa.__dict__, document_name=t)
+        except Exception as e:
+            exit_with_info(f'Error:\n{fa.model_dump()}\n{t}\n{e}')
+
+        print(fa_document)
+
+@cli.command()
+def search(item: str) -> None:
+    '''
+    TODO
+    '''
+    fixed_assets = load_fixed_assets()
 
 @cli.command()
 def config():
@@ -156,4 +364,3 @@ def config():
 
 if __name__ == '__main__':
     cli()
-
