@@ -9,7 +9,7 @@ class App_Settings(BaseModel):
     config_file: str = 'settings.json'
     wb_filename: str = ''
     fa_filename: str = ''
-    fa_path: Optional[str] = ''  # Probably unneeded
+    fa_path: Optional[str] = ''
     last_column: int = 0
     configured: bool = False
 
@@ -17,7 +17,7 @@ class App_Settings(BaseModel):
         self.fa_path = str(self.data_path)
         filename = self.data_path / self.config_file
         if Path.is_file(filename):
-            with open(filename) as config_file:
+            with open(filename, encoding='utf-8') as config_file:
                 config = load(config_file)
 
             self.__dict__.update(config)
@@ -42,10 +42,10 @@ class App_Settings(BaseModel):
             "last_column": self.last_column
         }
         try:
-            with open(filename,'w') as config_file:
+            with open(filename,'w', encoding='utf-8') as config_file:
                 dump(json_dict, config_file, indent=2)
         except OSError as e:
-            print(f'Write error: (e)')
+            print(f'Write error: ({e})')
 
 
 class FixedAsset(BaseModel):
@@ -64,6 +64,6 @@ class FixedAsset(BaseModel):
     inventory_number: str = Field(...)
 
 class FixedAssetDocument(FixedAsset):
-    FA_TEMPLATE: str = 'FA - template.xltx'
+    FA_TEMPLATE: str = 'FA_template.xltx'
     document_name: str = Field(...)
     committee: list = ['John Smith', 'Jane Doe']

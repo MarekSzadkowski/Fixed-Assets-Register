@@ -3,7 +3,7 @@ from typing import cast
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from FixedAssetsRegister import obtain_last_column_from_worksheet
+from FixedAssetsRegister.main import obtain_last_column_from_worksheet
 
 def test_last_column_in_workshhet():
     '''
