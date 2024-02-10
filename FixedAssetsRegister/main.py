@@ -3,6 +3,7 @@
 from datetime import datetime
 from os import _exit
 from pickle import dump, load
+from re import match
 from typing import Any, cast
 
 from openpyxl import load_workbook
@@ -63,14 +64,16 @@ def create_document_name(row: tuple) -> str | None:
     Unit and six last digits from the inventory number.
     Returns None if serial contains something else than digits, as it means
     uncomplete stuff - something is currently being built and it costs are
-    not known yet.
+    unknown yet.
     '''
-    if row[2] is not None:
-        serial = row[2][-6:]
+    inventory_number = row[2]
+    unit = row[12]
+    if inventory_number is not None:
+        serial = inventory_number[-6:]
         for char in serial:
             if char.isdigit():
                 return None
-        return (row[12], serial)
+        return (unit, serial)
 
 def fix_date(_date: Any) -> str:
     if _date is None:
@@ -82,6 +85,8 @@ def fix_date(_date: Any) -> str:
             # date may be given as string not complying the actual
             # standards i.e as 'date,date' in this case the former is taken.
             _date = _date.strip()
+            date_pattern = r"^\d{2}-\d{2}-\d{4}$"
+            match(date_pattern, _date)
             if ',' in _date:
                 _date, _ =_date.replace(' ', '').split(',')
             if ' ' in _date:
@@ -155,12 +160,13 @@ def select_fixed_asset_elements(rows: list[tuple]) -> list[tuple, FixedAsset]:
     for i, row in enumerate(rows):
         ordinal_number = row[0]
         # previous_ordinal_number = row[i - 1][0]
-        inventory_number = row[2]
         selected_elements = []
+        inventory_number = row[2]
 
-        is_pattern = skip_on_pattern(inventory_number)
+        # is_pattern = skip_on_pattern(inventory_number)
         if (ordinal_number is None or inventory_number is None
-            or is_pattern
+            or skip_on_pattern(inventory_number)
+            # or is_pattern
             and i > 0 and ordinal_number == rows[i - 1]):  # previous_ordinal_number
             continue
 
