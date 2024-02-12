@@ -8,8 +8,9 @@ class App_Settings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.json'
     wb_filename: str = ''
+    sheet_name: str = ''
     fa_filename: str = ''
-    fa_path: Optional[str] = ''
+    fa_path: Optional[str] = 'FA_documents'
     last_column: int = 0
     configured: bool = False
 
@@ -22,30 +23,34 @@ class App_Settings(BaseModel):
 
             self.__dict__.update(config)
             self.data_path = Path(config.get('data_path'))
-            self.configured = True
 
+        # Pydantic requires use of __context to initialize the model,
+        # which is set to None
         return super().model_post_init(__context)
 
-    def list_files(self) -> list:
-        elements = self.data_path.glob('*.xlsx')
+    def list_files(self) -> list[str]:
+        path = self.data_path.home()
+        elements = path.rglob('*.xlsx')
         return [str(e) for e in elements]
 
     def save(self):
-        filename = self.data_path / self.config_file
-        json_dict = {
-            "data_path": str(self.data_path),
-            "config_file": self.config_file,
-            "wb_filename": self.wb_filename,
-            # "sheet_name": self.sheet_name,
-            "fa_path": self.fa_path,
-            "fa_filename": self.fa_filename,
-            "last_column": self.last_column
-        }
-        try:
-            with open(filename,'w', encoding='utf-8') as config_file:
-                dump(json_dict, config_file, indent=2)
-        except OSError as e:
-            print(f'Write error: ({e})')
+        if  self.configured:
+            filename = self.data_path / self.config_file
+            json_dict = {
+                "data_path": str(self.data_path),
+                "config_file": self.config_file,
+                "wb_filename": self.wb_filename,
+                "sheet_name": self.sheet_name,
+                "fa_path": self.fa_path,
+                "fa_filename": self.fa_filename,
+                "last_column": self.last_column,
+                "configured": self.configured,
+            }
+            try:
+                with open(filename,'w', encoding='utf-8') as config_file:
+                    dump(json_dict, config_file, indent=2)
+            except OSError as e:
+                print(f'Write error: ({e})')
 
 
 class FixedAsset(BaseModel):
