@@ -1,6 +1,6 @@
-'''
+"""
 Translation of the financial sources specific to the University of Warsaw
-'''
+"""
 FINANCIAL_SOURCES = {
     '550-D111-00-1110000': {'psp': '0801-D111-00011-01', 'cost_center': '1110000'},
     '550-D111-00-1110002': {'psp': '0801-D111-00011-01', 'cost_center': '1110002'},

@@ -24,7 +24,7 @@ class App_Settings(BaseModel):
             self.__dict__.update(config)
             self.data_path = Path(config.get('data_path'))
 
-        # Pydantic requires use of __context to initialize the model,
+        # It seems Pydantic requires use of __context to initialize the model,
         # here it defaults to None
         return super().model_post_init(__context)
 
