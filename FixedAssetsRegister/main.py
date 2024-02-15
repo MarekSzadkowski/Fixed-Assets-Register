@@ -27,23 +27,39 @@ def exit_with_info(info: str) -> None:
     _exit(1)
 
 @overload
-def user_input(files: list[str]) -> int | None:
-    ...
+def user_input(entries: list[str], msg: str) -> int | None: ...
 @overload
-def user_input(string: str) -> str | None:
-    ...
+def user_input(entries: str, msg: str | None = None) -> str | None: ...
 
-def user_input(entries: list[str] | str, query: str) -> int | str | None:
+def user_input(entries: list[str] | str, msg: str) -> int | str | None:
     """
     Returns the user input depending on the input type
     """
     if isinstance(entries, list):
         for index, file in enumerate(entries, 1):
             print(f'[{index}] {file}')
-        return int(input(f'{query}: ')) - 1
+        return int(input(f'{msg}: ')) - 1
     if isinstance(entries, str):
-        return input(f'{query}, press enter or choose another filename: ')
+        return input(
+            f'{msg}\n{entries}\nPress enter to confirm or choose another filename: ')
     return None
+
+def setup_wordbook(app_settings: App_Settings, files: list[str]) -> bool:
+    index = user_input(
+        files,
+        'Choose a file which is your wordbook you want to use',
+    )
+    app_settings.wb_filename = files[index]
+    wordbook = get_wordbook(app_settings.wb_filename)
+    if wordbook:
+        app_settings.sheet_name = wordbook.active.title
+        print('The sheet name has been set to: ' + app_settings.sheet_name)
+        choice = input('Do you want to change it? (y/n): ')
+        if choice.lower() == 'y':
+            app_settings.sheet_name = input('Enter new sheet name: ')
+        app_settings.last_column = obtain_last_column_from_worksheet(wordbook.active)
+        return True
+    return False
 
 def get_app_settings() -> App_Settings:
     """
@@ -51,35 +67,30 @@ def get_app_settings() -> App_Settings:
     """
     app_settings = App_Settings()
 
-    try: 
+    try:
         files = app_settings.list_files()
     except FileNotFoundError:
         exit_with_info('Cannot find any Excel file.')
 
     if app_settings.wb_filename == '':
-        index = user_input(
-            files,
-            'Choose a file which is your wordbook you want to use',
-        )
-        app_settings.wb_filename = files[index]
-    if app_settings.sheet_name == '':
-        wb = get_wordbook(app_settings.wb_filename)
-        app_settings.sheet_name = wb.active.title
-        print('The sheet name has been set to: ' + app_settings.sheet_name)
-        choice = input('Do you want to change it? (y/n): ')
-        if choice.lower() == 'y':
-            app_settings.sheet_name = input('Enter new sheet name: ')
+        setup_wordbook(app_settings, files)
+
     if app_settings.fa_filename == '':
         index = user_input(
             files,
             'Choose a file which is your fixed asset template you want to use',
         )
         app_settings.fa_filename = files[index]
-    if app_settings.fa_path == '':
-        app_settings.fa_path = user_input(
-            'FA_documents',
-            'Enter path to fixed asset template',
-        )
+
+    fa_path = user_input(
+        app_settings.fa_path,
+        'Enter the path where your fixed asset documents will be stored, currently set to: '
+    )
+    if fa_path != '' and fa_path != app_settings.fa_path:
+        app_settings.fa_path = fa_path
+
+    app_settings.configured = True
+
     return app_settings
 
 def get_wordbook(filename) -> Workbook | None:
@@ -179,7 +190,7 @@ def correct_date(date: str) -> str:
     Returns:
     str: The corrected date string.
     """
-    if ',' in date or  ' ' in date:
+    if ',' in date or ' ' in date:
         if ',' in date:
             date, _ = date.split(',')
         else:
@@ -189,14 +200,23 @@ def correct_date(date: str) -> str:
     return date
 
 def fix_date(_date: Any) -> str:
+    """
+    Usually _date is a datetime object, but sometimes may be
+    given as a string not complying with the actual standards
+    (e.g. as 'date,date' literals) in this case the former literal is taken.
+
+    Parameters:
+    _date (str | None): The input date string to be corrected.
+
+    Returns:
+    str: The corrected date string.
+    """
     if _date is None:
         _date = ''
     else:
         try:
             _date = _date.strftime('%d-%m-%Y')
         except AttributeError:
-            # date may be given as string not complying the actual
-            # standards i.e as 'date,date' in this case the former is taken.
             date_string = correct_date(_date.strip())
             _date = match(DATE_PATTERN, date_string)
             if _date is None:
@@ -257,7 +277,7 @@ def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
         inventory_number=row[2],
         )
 
-def select_fixed_asset_elements(rows: list[tuple]) -> list[str, tuple, FixedAsset]:
+def select_fixed_asset_elements(rows: list[tuple]) -> list[tuple, FixedAsset]:
     """
     The wordbook I was given had following 16 columns:
     #. ordinal number: it represents an invoice or a group of them,
@@ -281,17 +301,15 @@ def select_fixed_asset_elements(rows: list[tuple]) -> list[str, tuple, FixedAsse
     """
 
     selected_elements = []
-    for i, row in enumerate(rows):
+    for i, row in enumerate(rows, 1):
         ordinal_number = row[0]
-        if i > 0:
-            previous_rows_ordinal_number = row[i - 1][0]
         inventory_number = row[2]
 
         # is_pattern = skip_on_pattern(inventory_number)
         if (ordinal_number is None or inventory_number is None
             or skip_on_pattern(inventory_number)
             # or is_pattern
-            and ordinal_number == previous_rows_ordinal_number):
+            and i > 1 and ordinal_number == rows[i - 1][0]):
             continue
 
         document_name_tuple = create_document_name(row)
@@ -320,12 +338,12 @@ def check_serials(elemets: list[tuple, FixedAsset]) -> list[FixedAsset] | None:
     of doubled elements.
     """
     serials = {}
-    for t, fa in elemets:
+    for t, _ in elemets:
         _, serial = t
         final_data_checking(serial)
         serials[serial] = serials.get(serial, 0) + 1
     doubles = [[k, v] for k, v in serials.items() if v > 1]
-    if doubles:
+    if len(doubles) > 0:
         return doubles
     return None
 
@@ -349,8 +367,8 @@ def print_double_elements(double_elements: list[list], selected_items: list) -> 
 def process_workbook_data(rows: list[tuple]) -> None:
     """
     Imports selected data from a wordbook and stores it
-    in a pickle DB file.
-    This is a DEBUG only version, used locally for debugging purposes.
+    in a pickle DB file if there is no doubled elements (serials).
+    The latter means error in the provided data, so no dump is done.
     """
     selected_items = select_fixed_asset_elements(rows)
     double_elements = check_serials(selected_items)
@@ -402,15 +420,15 @@ def report():
     print_fixed_assets(fixed_assets)
 
 @cli.command()
-def fa() -> None:
+def ot() -> None:
     """
     Still to do - throws an error ATM
     """
     fixed_assets = load_fixed_assets()
-    for t, _ in fixed_assets:
+    for t, fa in fixed_assets:
         try:
             fa_document = FixedAssetDocument(
-                **fa.__dict__,
+                fa=fa,
                 document_name=t)
         except Exception as e:
             exit_with_info(f'Error:\n{fa.model_dump()}\n{t}\n{e}')
@@ -427,13 +445,8 @@ def search(item: str) -> None:
 @cli.command()
 def config():
     app_settings = get_app_settings()
-
-    if app_settings.last_column == 0:
-        wordbook: Workbook = get_wordbook(app_settings.wb_filename)  # type: ignore
-        app_settings.last_column = obtain_last_column_from_worksheet(
-            cast(Worksheet, wordbook.active))
-        app_settings.configured = True
-        app_settings.save()
+    app_settings.save()
+    print('App settings saved!')
 
 if __name__ == '__main__':
     cli(None)
