@@ -15,7 +15,7 @@ class App_Settings(BaseModel):
     configured: bool = False
 
     def model_post_init(self, __context: Any) -> None:
-        self.fa_path = str(self.data_path)
+        self.fa_path = str(self.data_path / self.fa_path)
         filename = self.data_path / self.config_file
         if Path.is_file(filename):
             with open(filename, encoding='utf-8') as config_file:
@@ -25,7 +25,7 @@ class App_Settings(BaseModel):
             self.data_path = Path(config.get('data_path'))
 
         # Pydantic requires use of __context to initialize the model,
-        # which is set to None
+        # here it defaults to None
         return super().model_post_init(__context)
 
     def list_files(self) -> list[str]:
@@ -69,6 +69,6 @@ class FixedAsset(BaseModel):
     inventory_number: str = Field(...)
 
 class FixedAssetDocument(FixedAsset):
-    FA_TEMPLATE: str = 'FA_template.xltx'
+    FA_TEMPLATE: str = 'FA_template.xlsx'
     document_name: str = Field(...)
     committee: list = ['John Smith', 'Jane Doe']
