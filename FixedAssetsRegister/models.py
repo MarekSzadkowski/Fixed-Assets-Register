@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-class App_Settings(BaseModel):
+class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.json'
     wb_filename: str = ''

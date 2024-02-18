@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime  # pylint: disable=unused-import
 from os import _exit
 from pickle import dump, load
 from re import match
@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from .models import App_Settings, FixedAsset
+from .models import AppSettings, FixedAsset, FixedAssetDocument
 from .financial_sources import FINANCIAL_SOURCES
 
 
@@ -41,7 +41,7 @@ def user_input(entries: list[str] | str, msg: str) -> int | str | None:
             f'{msg}\n{entries}\nPress enter to confirm or choose another filename: ')
     return None
 
-def setup_wordbook(app_settings: App_Settings, files: list[str]) -> bool:
+def setup_wordbook(app_settings: AppSettings, files: list[str]) -> bool:
     index = user_input(
         files,
         'Choose a file which is your wordbook you want to use',
@@ -58,11 +58,11 @@ def setup_wordbook(app_settings: App_Settings, files: list[str]) -> bool:
         return True
     return False
 
-def get_app_settings() -> App_Settings:
+def get_app_settings() -> AppSettings:
     """
-    Returns the complete App_Settings object depending on users input.
+    Returns the complete AppSettings object depending on users input.
     """
-    app_settings = App_Settings()
+    app_settings = AppSettings()
 
     try:
         files = app_settings.list_files()
@@ -81,7 +81,7 @@ def get_app_settings() -> App_Settings:
 
     fa_path = user_input(
         app_settings.fa_path,
-        'Enter the path where your fixed asset documents will be stored, currently set to: '
+        """Enter the path where your fixed asset documents will be stored,\n\rcurrently set to: """
     )
     if fa_path != '' and fa_path != app_settings.fa_path:
         app_settings.fa_path = fa_path
@@ -168,13 +168,25 @@ def create_document_name(row: tuple) -> str | None:
         return None
     if unit is None:
         exit_with_info(
-            f"""Unit cannot be empty!\n
+            f"""Unit cannot be empty!\n\r
             Please check your data at ordinal number = {row[0]}.""")
     serial = inventory_number[-6:]
     for char in serial:
         if not char.isdigit():
             return None
     return (unit, serial)
+
+def financial_cost_values(financial_source: str) -> list[str, str] | None:
+    """
+    Returns a list of psp and cost_center elements if financial_source is found
+    in the FINANCIAL_SOURCES dictionary. None oterwise.
+    """
+    if financial_source in FINANCIAL_SOURCES:
+        return [
+            FINANCIAL_SOURCES[financial_source]['psp'],
+            FINANCIAL_SOURCES[financial_source]['cost_center'],
+        ]
+    return None
 
 def correct_date(date: str) -> str:
     """
@@ -213,30 +225,18 @@ def fix_date(_date: Any) -> str:
     else:
         try:
             _date = _date.strftime('%d-%m-%Y')
-        except AttributeError:
+        except AttributeError as e:
             date_string = correct_date(_date.strip())
             _date = match(DATE_PATTERN, date_string)
             if _date is None:
-                raise ValueError(f'Invalid date format: {_date}')
+                raise ValueError(f'Invalid date format: {_date}') from e
 
             _date = _date.group()
     return _date
 
-def financial_cost_values(financial_source: str) -> list[str, str] | None:
-    """
-    Returns a list of psp and cost_center elements if financial_source is found
-    in the FINANCIAL_SOURCES dictionary. None oterwise.
-    """
-    if financial_source in FINANCIAL_SOURCES:
-        return [
-            FINANCIAL_SOURCES[financial_source]['psp'],
-            FINANCIAL_SOURCES[financial_source]['cost_center'],
-        ]
-    return None
-
 def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
     """
-    If financial source (row[3]) is given (which is mostly true),
+    If financial_source (row[3]) is given (which is mostly true),
     it is translated to psp and cost_center repectivly
 
     Parameters:
@@ -302,10 +302,8 @@ def select_fixed_asset_elements(rows: list[tuple]) -> list[tuple, FixedAsset]:
         ordinal_number = row[0]
         inventory_number = row[2]
 
-        # is_pattern = skip_on_pattern(inventory_number)
         if (ordinal_number is None or inventory_number is None
             or skip_on_pattern(inventory_number)
-            # or is_pattern
             and i > 1 and ordinal_number == rows[i - 1][0]):
             continue
 
@@ -345,7 +343,7 @@ def check_serials(elemets: list[tuple, FixedAsset]) -> list[FixedAsset] | None:
     return None
 
 def read_wordbook_data() -> list[tuple]:
-    app_settings = App_Settings()
+    app_settings = AppSettings()
     wordbook: Workbook = get_wordbook(app_settings.wb_filename)  # type: ignore
     rows = obtain_cell_values_from_wordbook(wordbook, app_settings.last_column)
     wordbook.close()
@@ -391,6 +389,20 @@ def print_fixed_assets(
         ) -> None:
     print()
     # for ordinal, doc_name, fixed_asset in fixed_assets_elements:
-    for doc_name, ordinal, fixed_asset in fixed_assets_elements:  
+    for doc_name, ordinal, fixed_asset in fixed_assets_elements:
         unit, serial = doc_name
         print(f'{ordinal}, {unit}-{serial}\n', fixed_asset)
+
+def create_fixed_asset_document(assets: list [FixedAsset], nr: int) -> None:
+    for doc_name, ordinal, fixed_asset in assets:
+        if ordinal == nr:
+            try:
+                fa_document = FixedAssetDocument(
+                    # fixed_asset=fixed_asset,
+                    document_name=doc_name)
+            except AttributeError as e:
+                exit_with_info(
+                    f'Error:\n{fixed_asset.model_dump()}\n{doc_name}\n{e}'
+                    )
+
+    print(fa_document)
