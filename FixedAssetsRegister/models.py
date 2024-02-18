@@ -68,7 +68,7 @@ class FixedAsset(BaseModel):
     cost_center: str = Field(...)
     inventory_number: str = Field(...)
 
-class FixedAssetDocument(FixedAsset):
+class FixedAssetDocument(FixedAsset, AppSettings):
     FA_TEMPLATE: str = 'FA_template.xlsx'
     document_name: str = Field(...)
     committee: list = ['John Smith', 'Jane Doe']
