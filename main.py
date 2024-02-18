@@ -2,8 +2,14 @@
 
 import click
 
-from FixedAssetsRegister import functions
-from FixedAssetsRegister.models import FixedAssetDocument
+from FixedAssetsRegister.functions import (
+    create_fixed_asset_document,
+    get_app_settings,
+    load_fixed_assets,
+    read_wordbook_data,
+    print_fixed_assets,
+    process_workbook_data,
+)
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -20,30 +26,22 @@ def wb() -> None:
     """
     Imports wordbook data to a simple DB (pickle)
     """
-    wordbook_data = functions.read_wordbook_data()
-    functions.process_workbook_data(wordbook_data)
+    wordbook_data = read_wordbook_data()
+    process_workbook_data(wordbook_data)
 
 @cli.command()
 def report():
-    fixed_assets = functions.load_fixed_assets()
-    functions.print_fixed_assets(fixed_assets)
+    fixed_assets = load_fixed_assets()
+    print_fixed_assets(fixed_assets)
 
 @cli.command()
-def ot() -> None:
+def fa(number: int) -> None:
     """
     Still to do - throws an error ATM
     """
-    fixed_assets = functions.load_fixed_assets()
-    for t, fa in fixed_assets:
-        try:
-            fa_document = FixedAssetDocument(
-                fa=fa,
-                document_name=t)
-        except Exception as e:
-            functions.exit_with_info(f'Error:\n{fa.model_dump()}\n{t}\n{e}')
-
-        print(fa_document)
-
+    fixed_assets = load_fixed_assets()
+    create_fixed_asset_document(fixed_assets, number)
+# pylint: disable=fixme
 # @cli.command()
 # def search(item: str) -> None:
 #     """
@@ -51,13 +49,13 @@ def ot() -> None:
 #     """
 #     match item:
 #         case '' : return None
-#         case 1 : fixed_assets = functions.load_fixed_assets()
-    
+#         case 1 : fixed_assets = load_fixed_assets()
+
 #     return fixed_assets
 
 @cli.command()
 def config():
-    app_settings = functions.get_app_settings()
+    app_settings = get_app_settings()
     app_settings.save()
     print('App settings saved!')
 
