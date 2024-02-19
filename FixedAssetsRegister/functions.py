@@ -41,20 +41,21 @@ def user_input(entries: list[str] | str, msg: str) -> int | str | None:
             f'{msg}\n{entries}\nPress enter to confirm or choose another filename: ')
     return None
 
-def setup_wordbook(app_settings: AppSettings, files: list[str]) -> bool:
+def setup_workbook(app_settings: AppSettings, files: list[str]) -> bool:
     index = user_input(
         files,
-        'Choose a file which is your wordbook you want to use',
+        'Choose a file which is your workbook you want to use',
     )
     app_settings.wb_filename = files[index]
-    wordbook = get_wordbook(app_settings.wb_filename)
-    if wordbook:
-        app_settings.sheet_name = wordbook.active.title
+    workbook = get_workbook(app_settings.wb_filename)
+    if workbook:
+        app_settings.sheet_name = workbook.active.title
         print('The sheet name has been set to: ' + app_settings.sheet_name)
         choice = input('Do you want to change it? (y/n): ')
         if choice.lower() == 'y':
             app_settings.sheet_name = input('Enter new sheet name: ')
-        app_settings.last_column = obtain_last_column_from_worksheet(wordbook.active)
+        app_settings.last_column = obtain_last_date_column_from_worksheet(
+            workbook.active)
         return True
     return False
 
@@ -70,7 +71,7 @@ def get_app_settings() -> AppSettings:
         exit_with_info('Cannot find any Excel file.')
 
     if app_settings.wb_filename == '':
-        setup_wordbook(app_settings, files)
+        setup_workbook(app_settings, files)
 
     if app_settings.fa_filename == '':
         index = user_input(
@@ -90,7 +91,7 @@ def get_app_settings() -> AppSettings:
 
     return app_settings
 
-def get_wordbook(filename) -> Workbook | None:
+def get_workbook(filename) -> Workbook | None:
     """
     Loads an Excel file from the given location on disk.
 
@@ -104,7 +105,7 @@ def get_wordbook(filename) -> Workbook | None:
         exit_with_info(
             f'Cannot find {filename}.\nPlease check your settings.')
 
-def obtain_cell_values_from_wordbook(wb: Workbook, max_col) -> list:
+def obtain_cell_values_from_workbook(wb: Workbook, max_col) -> list:
     """
     Returns cell values from given dimensions
 
@@ -117,7 +118,8 @@ def obtain_cell_values_from_wordbook(wb: Workbook, max_col) -> list:
     sheet: Worksheet = cast(Worksheet, wb.active)
     return list(sheet.iter_rows(2, max_col=max_col, values_only=True))
 
-def obtain_last_column_from_worksheet(sheet: Worksheet) -> int:
+def obtain_last_date_column_from_worksheet(
+    sheet: Worksheet) -> int:
     """
     Parameters:
     sheet (Worksheet): The current sheet of the Excel file.
@@ -277,13 +279,13 @@ def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
 
 def select_fixed_asset_elements(rows: list[tuple]) -> list[tuple, FixedAsset]:
     """
-    The wordbook I was given had following 16 columns:
+    The workbook I was given had following 16 columns:
     #. ordinal number: it represents an invoice or a group of them,
        may repeat itself many times,
        may also be skipped (None), AFTER it has been specified once.
     #. unused here
     #. inventory number
-    #. financial source - probably the most important column in thw wordbook,
+    #. financial source - probably the most important column in thw workbook,
        as it constitutes the fields of psp and cost_center.
     #. invoice number
     #. invoice date
@@ -343,11 +345,11 @@ def check_serials(elemets: list[tuple, FixedAsset]) -> list[FixedAsset] | None:
         return doubles
     return None
 
-def read_wordbook_data() -> list[tuple]:
+def read_workbook_data() -> list[tuple]:
     app_settings = AppSettings()
-    wordbook: Workbook = get_wordbook(app_settings.wb_filename)  # type: ignore
-    rows = obtain_cell_values_from_wordbook(wordbook, app_settings.last_column)
-    wordbook.close()
+    workbook: Workbook = get_workbook(app_settings.wb_filename)  # type: ignore
+    rows = obtain_cell_values_from_workbook(workbook, app_settings.last_column)
+    workbook.close()
     return rows
 
 def print_double_elements(double_elements: list[list], selected_items: list) -> None:
@@ -362,7 +364,7 @@ def print_double_elements(double_elements: list[list], selected_items: list) -> 
 
 def process_workbook_data(rows: list[tuple]) -> None:
     """
-    Imports selected data from a wordbook and stores it
+    Imports selected data from a workbook and stores it
     in a pickle DB file if there is no doubled elements (serials).
     The latter means error in the provided data, so no dump is done.
     """

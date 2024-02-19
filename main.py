@@ -6,7 +6,7 @@ from FixedAssetsRegister.functions import (
     create_fixed_asset_document,
     get_app_settings,
     load_fixed_assets,
-    read_wordbook_data,
+    read_workbook_data,
     print_fixed_assets,
     process_workbook_data,
 )
@@ -24,10 +24,10 @@ def cli(ctx):
 @cli.command()
 def wb() -> None:
     """
-    Imports wordbook data to a simple DB (pickle)
+    Imports workbook data to a simple DB (pickle)
     """
-    wordbook_data = read_wordbook_data()
-    process_workbook_data(wordbook_data)
+    workbook_data = read_workbook_data()
+    process_workbook_data(workbook_data)
 
 @cli.command()
 def report():
