@@ -26,7 +26,7 @@ class AppSettings(BaseModel):
 
         # It seems Pydantic requires use of __context to initialize the model,
         # here it defaults to None
-        return super().model_post_init(__context)
+        super().model_post_init(__context)
 
     def list_files(self) -> list[str]:
         path = self.data_path.home()
@@ -72,3 +72,12 @@ class FixedAssetDocument(FixedAsset, AppSettings):
     FA_TEMPLATE: str = 'FA_template.xlsx'
     document_name: str = Field(...)
     committee: list = ['John Smith', 'Jane Doe']
+
+class BadDateFormat(Exception):
+    """
+    Raised if the date is not in the correct format
+    """
+    def __init__(self, date: str):
+        self.date = date
+        self.message = f'Invalid date format: {date}'
+        super().__init__(self.message)
