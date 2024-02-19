@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from .models import AppSettings, FixedAsset, FixedAssetDocument
+from .models import AppSettings, BadDateFormat, FixedAsset, FixedAssetDocument
 from .financial_sources import FINANCIAL_SOURCES
 
 
@@ -188,7 +188,7 @@ def financial_cost_values(financial_source: str) -> list[str, str] | None:
         ]
     return None
 
-def correct_date(date: str) -> str:
+def format_date(date: str) -> str:
     """
     Corrects the date format by removing any comma or space,
     replaces dots with dashes and returns the corrected date.
@@ -226,10 +226,10 @@ def fix_date(_date: Any) -> str:
         try:
             _date = _date.strftime('%d-%m-%Y')
         except AttributeError as e:
-            date_string = correct_date(_date.strip())
+            date_string = format_date(_date.strip())
             _date = match(DATE_PATTERN, date_string)
             if _date is None:
-                raise ValueError(f'Invalid date format: {_date}') from e
+                raise BadDateFormat(_date) from e
 
             _date = _date.group()
     return _date
@@ -258,7 +258,8 @@ def create_fixed_asset(row: tuple[Any]) -> FixedAsset:
     try:
         date = fix_date(row[11])
         invoice_date = fix_date(row[5])
-    except ValueError:
+    except BadDateFormat as e:
+        print(e)
         exit_with_info(f'Please check your data for ordinal number: {row[0]}')
 
     return FixedAsset(
