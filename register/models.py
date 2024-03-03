@@ -1,17 +1,17 @@
 from json import load, dump
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
-    config_file: str = 'settings.json'
-    wb_filename: str = ''
-    sheet_name: str = ''
-    fa_filename: str = ''
-    fa_path: Optional[str] = 'FA_documents'
-    last_column: int = 0
+    config_file: str = 'settings.txt'
+    wb_filename: str | None = None
+    # sheet_name: str | None = None
+    fa_filename: str | None = None
+    fa_path: str = 'FA_documents'
+    last_column: int | None = None
     configured: bool = False
 
     def model_post_init(self, __context: Any) -> None:
@@ -28,7 +28,7 @@ class AppSettings(BaseModel):
         # here it defaults to None
         super().model_post_init(__context)
 
-    def list_files(self) -> list[str]:
+    def list_excel_files(self) -> list[str] | None:
         path = self.data_path.home()
         elements = path.rglob('*.xlsx')
         return [str(e) for e in elements]
@@ -40,7 +40,7 @@ class AppSettings(BaseModel):
                 "data_path": str(self.data_path),
                 "config_file": self.config_file,
                 "wb_filename": self.wb_filename,
-                "sheet_name": self.sheet_name,
+                # "sheet_name": self.sheet_name,
                 "fa_path": self.fa_path,
                 "fa_filename": self.fa_filename,
                 "last_column": self.last_column,
@@ -54,23 +54,29 @@ class AppSettings(BaseModel):
 
 
 class FixedAsset(BaseModel):
-    date: str = Field(...)
-    name_of_item: str = Field(...)
-    # characteristics: Optional[str] = ''
-    invoice: str = Field(...)
-    invoice_date: str = Field(...)
-    issuer: str = Field(...)
-    # usage: str = Field(...)
-    value: str = Field(...)
-    date: str = Field(...)
-    material_duty_person: str = Field(...)
-    psp: str = Field(...)
-    cost_center: str = Field(...)
-    inventory_number: str = Field(...)
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
+        extra='forbid',
+        populate_by_name=True,
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
+    date: str
+    name_of_item: str
+    invoice: str
+    invoice_date: str
+    issuer: str
+    value: str
+    material_duty_person: str
+    psp: str
+    cost_center: str
+    inventory_number: str
 
-class FixedAssetDocument(FixedAsset, AppSettings):
+class FixedAssetDocument(BaseModel):
+    document_name_unit: str
+    document_name_serial: str
+    fixed_asset: FixedAsset
     FA_TEMPLATE: str = 'FA_template.xlsx'
-    document_name: str = Field(...)
     committee: list = ['John Smith', 'Jane Doe']
 
 class BadDateFormat(Exception):
