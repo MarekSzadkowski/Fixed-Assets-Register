@@ -2,14 +2,14 @@
 
 import click
 
-from FixedAssetsRegister.functions import (
+from register.functions import (
     create_fixed_asset_document,
     get_app_settings,
     load_fixed_assets,
-    read_workbook_data,
     print_fixed_assets,
     process_workbook_data,
 )
+from register.workbook import read_workbook_data
 
 @click.group(invoke_without_command=True)
 @click.pass_context
