@@ -11,7 +11,6 @@ INDEXES = {
     'ordinal_number': 0,
     'financial_source': 3,
     'unit': 12,
-    'serial': 2,
     'date': 11,
     'name_of_item': 6,
     'invoice': 4,
