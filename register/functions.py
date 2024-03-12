@@ -7,7 +7,12 @@ from pydantic import ValidationError
 
 from .financial_sources import FINANCIAL_SOURCES
 from .helpers import exit_with_info, user_input
-from .models import AppSettings, FixedAsset, FixedAssetDocument
+from .models import (
+    AppSettings,
+    # BadDateFormat,
+    FixedAsset,
+    FixedAssetDocument,
+)
 from .workbook import setup_workbook
 
 
@@ -198,12 +203,12 @@ def load_fixed_assets() -> list[FixedAssetDocument]:
 def print_fixed_assets(
         fixed_assets_documents: list[FixedAssetDocument]
     ) -> None:
+    print()
+    # for ordinal, doc_name, fixed_asset in fixed_assets_documents:
     for document in fixed_assets_documents:
-        print(
-            f'{document.document_name_unit}-{document.document_name_serial}'
-        )
-        document.fixed_asset.material_duty_person = 'RODO'
-        print(document.fixed_asset.model_dump_json(by_alias=True, indent=2))
+        # unit, serial = doc_name
+        # print(f'{ordinal}, {unit}-{serial}\n', fixed_asset)
+        print(document)
 
 def create_fixed_asset_document(assets: list [FixedAsset], nr: int) -> None:
     for doc_name, ordinal, fixed_asset in assets:
