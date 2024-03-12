@@ -30,9 +30,13 @@ def wb() -> None:
     process_workbook_data(workbook_data)
 
 @cli.command()
-def report():
+# @cli.option('--gdpr', is_flag=True)
+def report() -> None:
+    """
+    Prints all data in the DB
+    """
     fixed_assets = load_fixed_assets()
-    print_fixed_assets(fixed_assets)
+    print_fixed_assets(fixed_assets, True)
 
 @cli.command()
 def fa(number: int) -> None:

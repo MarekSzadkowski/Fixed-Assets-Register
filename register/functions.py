@@ -201,14 +201,16 @@ def load_fixed_assets() -> list[FixedAssetDocument]:
         return fixed_assets
 
 def print_fixed_assets(
-        fixed_assets_documents: list[FixedAssetDocument]
+        fixed_assets_documents: list[FixedAssetDocument],
+        gdpr: bool = False,
     ) -> None:
-    print()
-    # for ordinal, doc_name, fixed_asset in fixed_assets_documents:
     for document in fixed_assets_documents:
-        # unit, serial = doc_name
-        # print(f'{ordinal}, {unit}-{serial}\n', fixed_asset)
-        print(document)
+        print(
+            f'{document.document_name_unit}-{document.document_name_serial}'
+        )
+        if gdpr:
+            document.fixed_asset.material_duty_person = 'GDPR'
+        print(document.fixed_asset.model_dump_json(by_alias=True, indent=2))
 
 def create_fixed_asset_document(assets: list [FixedAsset], nr: int) -> None:
     for doc_name, ordinal, fixed_asset in assets:
