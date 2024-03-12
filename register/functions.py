@@ -131,7 +131,7 @@ def select_fixed_asset_documents(
             fixed_asset = create_fixed_asset(row)
         except ValidationError as e:
             exit_with_info(
-                f'\nError at ordinal_number {row['ordinal_number']}:\n\n' \
+                f'\nError at ordinal_number {row['ordinal_number']}:\n\n'
                 + f'{e}:\n\n{row}'
             )
         fa_document = FixedAssetDocument(
@@ -140,9 +140,9 @@ def select_fixed_asset_documents(
             fixed_asset=fixed_asset
         )
         fa_documents.append(fa_document)
-    return (fa_documents)
+    return fa_documents
 
-def check_serials(
+def check_duplicated_serials(
         elemets: list[tuple, FixedAsset]
     ) -> list[FixedAsset] | None:
     """
@@ -181,7 +181,7 @@ def process_workbook_data(rows: list[tuple]) -> None:
     #     pass
         # print_report(report)
 
-    # double_elements = check_serials(selected_items)
+    # double_elements = check_duplicated_serials(selected_items)
     double_elements = None
     if double_elements:
         print_double_elements(double_elements, selected_items)

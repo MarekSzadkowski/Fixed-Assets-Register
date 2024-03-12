@@ -4,7 +4,7 @@ from pathlib import Path
 from re import match, sub
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, field_validator, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 
 class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
@@ -70,21 +70,15 @@ class FixedAsset(BaseModel):
 
     date: str
     name_of_item: str
-    invoice: str | None = Field(default='appendix')
+    invoice: str
     invoice_date: str
-    issuer: str | None = Field(default='appendix')
+    issuer: str
     value: str
     material_duty_person: str
     psp: str
     cost_center: str
     inventory_number: str
 
-    # Sometimes financial_source is a very complex string, in such cases values
-    # of 'invoice' and 'issuer' are usually not given, therefore None, which
-    # needs fixing so the class' constructor wouldn't complain.
-    #
-    # This is error-prone however - gotta refactor it through the pydantic's
-    # dependency validators, for now the comment above is senseless.
     @field_validator('invoice', 'invoice_date', 'issuer', mode='before')
     @classmethod
     def parse_default(cls, value: Any) -> str:
@@ -94,8 +88,6 @@ class FixedAsset(BaseModel):
 
     @field_validator('date', 'material_duty_person', mode='before')
     @classmethod
-    # Don't like the way of validation the 'date' field, but for now
-    # have nothing better!
     def parse_value(cls, value: Any) -> str:
         if value is None:
             return ''
@@ -125,6 +117,24 @@ class FixedAsset(BaseModel):
                 raise ValueError(date_string)
 
             return date.group()
+
+    # Sometimes financial_source is a very complex string, in such cases values
+    # of 'invoice' and 'issuer' are usually not given, therefore None, which
+    # needed fixing so the class' constructor wouldn't complain.
+    # Now we can check it again. We DO NOT have a value of financial_source,
+    # but we can check the value of cost_center, which in such cases is copied to
+    # psp and cost_center.
+    @field_validator('cost_center')
+    @classmethod
+    def date_after_parser(
+        cls,
+        cost_center: str,
+        validated_values: ValidationInfo
+    ) -> str:
+        if (validated_values.data['date'] == ''
+            and ' ' not in cost_center):
+            raise ValueError('Please specify a date in the format DD-MM-YYYY')
+        return cost_center
 
     def __format_date(self, date_str: str) -> str:
         """
