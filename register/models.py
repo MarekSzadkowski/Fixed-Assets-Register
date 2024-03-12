@@ -1,8 +1,10 @@
+from datetime import datetime  # pylint: disable=unused-import
 from json import load, dump
 from pathlib import Path
+from re import match, sub
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 
 class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
@@ -53,6 +55,10 @@ class AppSettings(BaseModel):
                 print(f'Write error: ({e})')
 
 
+DATE_PATTERN: str = r'^\d{2}-\d{2}-\d{4}$'
+
+
+
 class FixedAsset(BaseModel):
     model_config = ConfigDict(
         coerce_numbers_to_str=True,
@@ -61,6 +67,7 @@ class FixedAsset(BaseModel):
         str_strip_whitespace=True,
         validate_assignment=True,
     )
+
     date: str
     name_of_item: str
     invoice: str
@@ -72,12 +79,95 @@ class FixedAsset(BaseModel):
     cost_center: str
     inventory_number: str
 
+    @field_validator('invoice', 'invoice_date', 'issuer', mode='before')
+    @classmethod
+    def parse_default(cls, value: Any) -> str:
+        if value is None:
+            return 'appendix'
+        return value
+
+    @field_validator('date', 'material_duty_person', mode='before')
+    @classmethod
+    def parse_value(cls, value: Any) -> str:
+        if value is None:
+            return ''
+        return value
+
+    @field_validator('date', 'invoice_date', mode='before')
+    @classmethod
+    def parse_date(cls, value: str) -> str:
+        """
+        Usually excel's date is a datetime object, but sometimes may be given
+        as a string not complying with the actual standards, e.g. as
+        'date, date' literals. In this case the former literal is taken.
+
+        Parameters:
+        date (str | None): The input date string to be corrected.
+
+        Returns:
+        str: The corrected date string.
+        """
+
+        if isinstance(value, datetime):
+            return value.strftime('%d-%m-%Y')
+        if isinstance(value, str):
+            date_string = cls.__format_date(cls, value)
+            date = match(DATE_PATTERN, date_string)
+            if date is None:
+                raise ValueError(date_string)
+
+            return date.group()
+
+    # Sometimes financial_source is a very complex string, in such cases values
+    # of 'invoice' and 'issuer' are usually not given, therefore None, which
+    # needed fixing so the class' constructor wouldn't complain.
+    # Now we can check it again. We DO NOT have a value of financial_source,
+    # but we can check the value of cost_center, which in such cases is copied to
+    # psp and cost_center.
+    @field_validator('cost_center')
+    @classmethod
+    def date_after_parser(
+        cls,
+        cost_center: str,
+        validated_values: ValidationInfo
+    ) -> str:
+        if (validated_values.data['date'] == ''
+            and ' ' not in cost_center):
+            raise ValueError('Please specify a date in the format DD-MM-YYYY')
+        return cost_center
+
+    def __format_date(self, date_str: str) -> str:
+        """
+        Corrects the date format by removing any comma or space,
+        replaces dots with dashes and returns the corrected date.
+
+        Parameters:
+        date (str): The input date string to be corrected.
+
+        Returns:
+        str: The corrected date string.
+        """
+        # The following line is needless cause pydantic does it for us
+        # date_str = sub(r'[,\s]+', '', date_str)
+        # Sadly this here however doesn't word, returns None value.
+        date_string = match(r'\,| ', date_str)
+        try:
+            date_string, _ = date_str.split(',')
+        except ValueError:
+            date_string, _ = date_str.split(' ')
+        date_str = sub(r'\.|\/', '-', date_string)
+        return date_str
+
 class FixedAssetDocument(BaseModel):
     document_name_unit: str
     document_name_serial: str
     fixed_asset: FixedAsset
     FA_TEMPLATE: str = 'FA_template.xlsx'
-    committee: list = ['John Smith', 'Jane Doe']
+    committee: list = Field(
+        min_length=1,
+        max_length=3,
+        default=['John Smith', 'Jane Doe']
+    )
 
 class BadDateFormat(Exception):
     """

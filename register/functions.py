@@ -1,4 +1,3 @@
-from datetime import datetime  # pylint: disable=unused-import
 from itertools import islice
 from pickle import dump, load
 from re import match
@@ -8,47 +7,17 @@ from pydantic import ValidationError
 
 from .financial_sources import FINANCIAL_SOURCES
 from .helpers import exit_with_info, user_input
-from .models import AppSettings, BadDateFormat, FixedAsset, FixedAssetDocument
+from .models import (
+    AppSettings,
+    # BadDateFormat,
+    FixedAsset,
+    FixedAssetDocument,
+)
 from .workbook import setup_workbook
 
 
 FILE_DB = 'fixed_assets.db'
-DATE_PATTERN = r'^\d{2}-\d{2}-\d{4}$'
 
-
-def get_app_settings() -> AppSettings:
-    """
-    Returns the complete AppSettings object depending on users input.
-    """
-    try:
-        app_settings = AppSettings()
-    except ValidationError as e:
-        exit_with_info(f'Error: {e}')
-
-    files = app_settings.list_excel_files()
-    if not files:
-        exit_with_info('Cannot find any Excel file.')
-
-    if app_settings.wb_filename is None:
-        setup_workbook(app_settings, files)
-
-    if app_settings.fa_filename is None:
-        index = user_input(
-            files,
-            'Choose a file which is your fixed asset template you want to use',
-        )
-        app_settings.fa_filename = files[index]
-
-    fa_path = user_input(
-        app_settings.fa_path,
-        'Enter the path where your fixed asset documents will be stored,\n'
-        + 'currently set to: '
-    )
-    if fa_path not in {'', app_settings.fa_path}:
-        app_settings.fa_path = fa_path
-
-    app_settings.configured = True
-    return app_settings
 
 def skip_on_pattern(value: str) -> bool:
     """
@@ -65,18 +34,17 @@ def skip_on_pattern(value: str) -> bool:
 def get_serial(inventory_number: str) -> str | None:
     """
     Parameter:
-    inventory_number from which the serial is derived,
-    i.e. the last six digits from it.
+    'inventory_number' from which the serial is derived,
+    i.e. the last six digits of it.
 
     Returns None if serial contains something else than digits, as it means
-    uncomplete stuff - something is currently being built and its costs are
-    unknown yet.
+    incomplete stuff - something is currently being built and its costs are
+    unknown yet, otherwise the matched string.
     """
-    serial = inventory_number[-6:]
-    for char in serial:
-        if not char.isdigit():
-            return None
-    return serial
+    matched = match(r'^\d{6}$', inventory_number[-6:])
+    if matched:
+        return matched.string
+    return None
 
 def financial_cost_values(financial_source: str) -> list[str, str] | None:
     """
@@ -90,78 +58,23 @@ def financial_cost_values(financial_source: str) -> list[str, str] | None:
         ]
     return None
 
-def format_date(date: str) -> str:
-    """
-    Corrects the date format by removing any comma or space,
-    replaces dots with dashes and returns the corrected date.
-
-    Parameters:
-    date (str): The input date string to be corrected.
-
-    Returns:
-    str: The corrected date string.
-    """
-    if ',' in date or ' ' in date:
-        if ',' in date:
-            date, _ = date.split(',')
-        else:
-            date, _ = date.split(' ')
-    if '.' in date:
-        date = date.replace('.', '-')
-    return date
-
-def fix_date(date: Any) -> str:
-    """
-    Usually date is a datetime object, but sometimes may be given
-    as a string not complying with the actual standards, e.g. as
-    'date, date' literals in this case the former literal is taken.
-
-    Parameters:
-    date (str | None): The input date string to be corrected.
-
-    Returns:
-    str: The corrected date string.
-    """
-    if date is None:
-        date = ''
-    else:
-        try:
-            date = date.strftime('%d-%m-%Y')
-        except AttributeError as e:
-            date_string = format_date(date.strip())
-            date = match(DATE_PATTERN, date_string)
-            if date is None:
-                raise BadDateFormat(date) from e
-
-            date = date.group()
-    return date
-
-def check_date(row: dict[str, int]) -> None:
-    """
-    Checks if the date is set correctly
-    """
-    try:
-        row['date'] = fix_date(row['date'])
-        row['invoice_date'] = fix_date(row['invoice_date'])
-    except BadDateFormat as e:
-        print(e)
-        exit_with_info(
-            'Please check your data for ordinal number: ' \
-            + f'{row['ordinal_number']}')
-
-def set_financial_source(row: dict[str, int]) -> bool:
+def set_financial_source(row: dict[str, Any]) -> bool:
     """
     If financial_source (row['financial_source']) is given (which is mostly true),
     it is translated to psp and cost_center repectivly.
     Sometimes financial_source may be given as a string however, if this is the
-    case we chceck if the strng starts P. If it does, we return True.
+    case we check if the strng starts with 'P' or 'p'.
+    If it does, we return False - we don't need to create a FixedAsset document.
 
     Parameters:
     row (dictionary): The current row of the Excel data.
+
+    Returns:
+    bool: True if financial_source was set, False otherwise.
     """
     financial_source = row['financial_source']
     if isinstance(financial_source, str) and financial_source[0] == 'P':
-        return True
+        return False
 
     if financial_source is None:
         row['psp'] = row['cost_center'] = ''
@@ -172,9 +85,9 @@ def set_financial_source(row: dict[str, int]) -> bool:
         else:
             row['psp'], row['cost_center'] = source
 
-    return False
+    return True
 
-def create_fixed_asset(row: dict[str, int]) -> FixedAsset:
+def create_fixed_asset(row: dict[str, Any]) -> FixedAsset:
     """
     Parameters:
     row (dictionary): The current row of the Excel data.
@@ -182,16 +95,8 @@ def create_fixed_asset(row: dict[str, int]) -> FixedAsset:
     Returns:
     FixedAsset: The created FixedAsset object.
     """
-    # Sometimes financial_source is a very complex string, in such cases values
-    # of 'invoice' and 'issuer' are usually not given, therefore None, which
-    # needs fixing so the class' constructor didn't complain about it.
-    if row['invoice'] is None:
-        row['invoice'] = 'appendix'
-    if row['issuer'] is None:
-        row['issuer'] = 'appendix'
-
-    construct_data = dict(islice(row.items(), 4, None))
-    return FixedAsset.model_validate(construct_data)
+    fixed_asset = dict(islice(row.items(), 3, None))
+    return FixedAsset.model_validate(fixed_asset)
 
 def select_fixed_asset_documents(
         rows: list[dict[Any]]
@@ -209,7 +114,7 @@ def select_fixed_asset_documents(
     Returns:
     list: A list of FixedAssetDocument objects.
     """
-    selected_elements = []
+    fa_documents = []
     for i, row in enumerate(rows, 1):
         ordinal_number = row['ordinal_number']
         inventory_number = row['inventory_number']
@@ -219,39 +124,25 @@ def select_fixed_asset_documents(
             and i > 1 and ordinal_number == rows[i - 1]['ordinal_number']):
             continue
 
-        # Or maybe this below would be better:?
-        # I asked the tinker about this, and it answered:
-        #
-        # if any((
-        #     ordinal_number is None,
-        #     inventory_number is None,
-        #     skip_on_pattern(inventory_number),
-        #     i > 1 and ordinal_number == rows[i - 1]['ordinal_number']
-        # )):
-        #     continue
-        #
-        # Personally I'd rather not.
-
-        serial = get_serial(row['serial'])
-        if serial is not None:
-            row['serial'] = serial
-            if set_financial_source(row):
-                continue
-            check_date(row)
-            try:
-                fixed_asset = create_fixed_asset(row)
-            except ValidationError as e:
-                print(f'Error in row {row['ordinal_number']}\n{row}:\n{e}')
-                continue
-            fa_document = FixedAssetDocument(
-                document_name_unit=row['unit'],
-                document_name_serial=serial,
-                fixed_asset=fixed_asset
+        serial = get_serial(row['inventory_number'])
+        if not serial or not set_financial_source(row):
+            continue
+        try:
+            fixed_asset = create_fixed_asset(row)
+        except ValidationError as e:
+            exit_with_info(
+                f'\nError at ordinal_number {row['ordinal_number']}:\n\n'
+                + f'{e}:\n\n{row}'
             )
-            selected_elements.append(fa_document)
-    return selected_elements
+        fa_document = FixedAssetDocument(
+            document_name_unit=row['unit'],
+            document_name_serial=serial,
+            fixed_asset=fixed_asset
+        )
+        fa_documents.append(fa_document)
+    return fa_documents
 
-def check_serials(
+def check_duplicated_serials(
         elemets: list[tuple, FixedAsset]
     ) -> list[FixedAsset] | None:
     """
@@ -286,7 +177,11 @@ def process_workbook_data(rows: list[tuple]) -> None:
     The latter means error in the provided data, so no dump is done.
     """
     selected_items = select_fixed_asset_documents(rows)
-    # double_elements = check_serials(selected_items)
+    # if report:
+    #     pass
+        # print_report(report)
+
+    # double_elements = check_duplicated_serials(selected_items)
     double_elements = None
     if double_elements:
         print_double_elements(double_elements, selected_items)
@@ -328,3 +223,37 @@ def create_fixed_asset_document(assets: list [FixedAsset], nr: int) -> None:
                     )
 
     print(fa_document)
+
+def get_app_settings() -> AppSettings:
+    """
+    Returns the complete AppSettings object depending on users input.
+    """
+    try:
+        app_settings = AppSettings()
+    except ValidationError as e:
+        exit_with_info(f'Error: {e}')
+
+    files = app_settings.list_excel_files()
+    if not files:
+        exit_with_info('Cannot find any Excel file.')
+
+    if app_settings.wb_filename is None:
+        setup_workbook(app_settings, files)
+
+    if app_settings.fa_filename is None:
+        index = user_input(
+            files,
+            'Choose a file which is your fixed asset template you want to use',
+        )
+        app_settings.fa_filename = files[index]
+
+    fa_path = user_input(
+        app_settings.fa_path,
+        'Enter the path where your fixed asset documents will be stored,\n'
+        + 'currently set to: '
+    )
+    if fa_path not in {'', app_settings.fa_path}:
+        app_settings.fa_path = fa_path
+
+    app_settings.configured = True
+    return app_settings

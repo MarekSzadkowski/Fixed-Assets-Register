@@ -11,7 +11,6 @@ INDEXES = {
     'ordinal_number': 0,
     'financial_source': 3,
     'unit': 12,
-    'serial': 2,
     'date': 11,
     'name_of_item': 6,
     'invoice': 4,
@@ -117,6 +116,9 @@ def obtain_last_data_column_from_worksheet(sheet: Worksheet) -> int:
 
 def read_workbook_data() -> list[list[Any]]:
     app_settings = AppSettings()
+    if app_settings.wb_filename is None:
+        files = app_settings.list_excel_files()
+        setup_workbook(app_settings, files)
     workbook: Workbook = get_workbook(app_settings.wb_filename)  # type: ignore
     rows = obtain_cell_values_from_workbook(
         workbook,
