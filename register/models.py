@@ -5,6 +5,7 @@ from re import match, sub
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
+from pydantic.alias_generators import to_camel
 
 class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
@@ -61,6 +62,7 @@ DATE_PATTERN: str = r'^\d{2}-\d{2}-\d{4}$'
 
 class FixedAsset(BaseModel):
     model_config = ConfigDict(
+        alias_generator=to_camel,
         coerce_numbers_to_str=True,
         extra='forbid',
         populate_by_name=True,
