@@ -149,9 +149,6 @@ class FixedAsset(BaseModel):
         Returns:
         str: The corrected date string.
         """
-        # The following line is needless cause pydantic does it for us
-        # date_str = sub(r'[,\s]+', '', date_str)
-        # Sadly this here however doesn't word, returns None value.
         date_string, _ = split(r'\,| ', date_str, 1)
         date_str = sub(r'\.|\/', '-', date_string)
         return date_str
