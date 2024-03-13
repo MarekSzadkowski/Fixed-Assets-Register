@@ -1,7 +1,7 @@
 from datetime import datetime  # pylint: disable=unused-import
 from json import load, dump
 from pathlib import Path
-from re import match, sub
+from re import match, split, sub
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
@@ -152,11 +152,7 @@ class FixedAsset(BaseModel):
         # The following line is needless cause pydantic does it for us
         # date_str = sub(r'[,\s]+', '', date_str)
         # Sadly this here however doesn't word, returns None value.
-        date_string = match(r'\,| ', date_str)
-        try:
-            date_string, _ = date_str.split(',')
-        except ValueError:
-            date_string, _ = date_str.split(' ')
+        date_string, _ = split(r'\,| ', date_str, 1)
         date_str = sub(r'\.|\/', '-', date_string)
         return date_str
 
