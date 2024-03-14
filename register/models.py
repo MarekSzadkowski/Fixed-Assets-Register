@@ -59,7 +59,6 @@ class AppSettings(BaseModel):
 DATE_PATTERN: str = r'^\d{2}-\d{2}-\d{4}$'
 
 
-
 class FixedAsset(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
@@ -95,7 +94,7 @@ class FixedAsset(BaseModel):
             return ''
         return value
 
-    @field_validator('date', 'invoice_date', mode='before')
+    @field_validator('date', 'invoice_date')
     @classmethod
     def parse_date(cls, value: str) -> str:
         """
@@ -149,8 +148,8 @@ class FixedAsset(BaseModel):
         Returns:
         str: The corrected date string.
         """
-        date_string, _ = split(r'\,| ', date_str, 1)
-        date_str = sub(r'\.|\/', '-', date_string)
+        date_str, _ = split(r'\,| ', date_str, 1)
+        date_str = sub(r'\.|\/', '-', date_str)
         return date_str
 
 class FixedAssetDocument(BaseModel):
