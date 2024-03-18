@@ -4,7 +4,13 @@ from pathlib import Path
 from re import match, split, sub
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    ValidationInfo,
+)
 from pydantic.alias_generators import to_camel
 
 class AppSettings(BaseModel):
@@ -94,9 +100,16 @@ class FixedAsset(BaseModel):
             return ''
         return value
 
+    @field_validator('date', 'invoice_date', mode='before')
+    @classmethod
+    def before_date_parser(cls, date: str) -> str:
+        if isinstance(date, datetime):
+            return date.strftime('%d-%m-%Y')
+        return date
+
     @field_validator('date', 'invoice_date')
     @classmethod
-    def parse_date(cls, value: str) -> str:
+    def after_date_parser(cls, value: str) -> str:
         """
         Usually excel's date is a datetime object, but sometimes may be given
         as a string not complying with the actual standards, e.g. as
@@ -108,16 +121,18 @@ class FixedAsset(BaseModel):
         Returns:
         str: The corrected date string.
         """
-
-        if isinstance(value, datetime):
-            return value.strftime('%d-%m-%Y')
-        if isinstance(value, str):
-            date_string = cls.__format_date(cls, value)
+        if value == '':
+            return value
+        try:
+            cls._parse_date(cls, value)
+        except ValueError:
+            date_string = cls._format_date(cls, value)
             date = match(DATE_PATTERN, date_string)
-            if date is None:
-                raise ValueError(date_string)
-
-            return date.group()
+            try:
+                return date.group()
+            except AttributeError as e:
+                raise ValueError(f'Invalid date format: {value}') from e
+        return value
 
     # Sometimes financial_source is a very complex string, in such cases values
     # of 'invoice' and 'issuer' are usually not given, therefore None, which
@@ -132,12 +147,25 @@ class FixedAsset(BaseModel):
         cost_center: str,
         validated_values: ValidationInfo
     ) -> str:
-        if (validated_values.data['date'] == ''
-            and ' ' not in cost_center):
-            raise ValueError('Please specify a date in the format DD-MM-YYYY')
+        values = validated_values.data
+        if  'date' in values:
+            if values['date'] == '' and ' ' not in cost_center:
+                raise ValueError('Please specify date as DD-MM-YYYY')
         return cost_center
 
-    def __format_date(self, date_str: str) -> str:
+    def _parse_date(self, date_str: str) -> None:
+        """
+        Raises ValidationError if the date is not in the correct format.
+
+        Parameters:
+        date (str): The input date string to be checked.
+        """
+        if date_str == 'appendix':
+            return date_str
+        if not match(DATE_PATTERN, date_str):
+            raise ValueError(date_str)
+
+    def _format_date(self, date_str: str) -> str:
         """
         Corrects the date format by removing any comma or space,
         replaces dots with dashes and returns the corrected date.

@@ -44,13 +44,9 @@ def setup_workbook(app_settings: AppSettings, files: list[str]) -> bool:
     app_settings.wb_filename = files[index]
     workbook = get_workbook(app_settings.wb_filename)
     if workbook:
-        # app_settings.sheet_name = workbook.active.title
-        # print('The sheet name has been set to: ' + app_settings.sheet_name)
-        # choice = input('Do you want to change it? (y/n): ')
-        # if choice.lower() == 'y':
-        #     app_settings.sheet_name = input('Enter new sheet name: ')
         app_settings.last_column = obtain_last_data_column_from_worksheet(
-            workbook.active)
+            workbook.active
+        )
         return True
     return False
 

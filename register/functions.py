@@ -7,12 +7,7 @@ from pydantic import ValidationError
 
 from .financial_sources import FINANCIAL_SOURCES
 from .helpers import exit_with_info, user_input
-from .models import (
-    AppSettings,
-    # BadDateFormat,
-    FixedAsset,
-    FixedAssetDocument,
-)
+from .models import AppSettings, FixedAsset, FixedAssetDocument
 from .workbook import setup_workbook
 
 
@@ -114,7 +109,7 @@ def select_fixed_asset_documents(
     Returns:
     list: A list of FixedAssetDocument objects.
     """
-    fa_documents = []
+    fixed_asset_documents = []
     for i, row in enumerate(rows, 1):
         ordinal_number = row['ordinal_number']
         inventory_number = row['inventory_number']
@@ -134,13 +129,19 @@ def select_fixed_asset_documents(
                 f'\nError at ordinal_number {row['ordinal_number']}:\n\n'
                 + f'{e}:\n\n{row}'
             )
-        fa_document = FixedAssetDocument(
-            document_name_unit=row['unit'],
-            document_name_serial=serial,
-            fixed_asset=fixed_asset
-        )
-        fa_documents.append(fa_document)
-    return fa_documents
+        if row['unit']:
+            fixed_asset_document = FixedAssetDocument(
+                document_name_unit=row['unit'],
+                document_name_serial=serial,
+                fixed_asset=fixed_asset
+            )
+        else:
+            exit_with_info(
+                f'No unit specified in row {row["ordinal_number"]}.'
+            )
+
+        fixed_asset_documents.append(fixed_asset_document)
+    return fixed_asset_documents
 
 def check_duplicated_serials(
         elemets: list[tuple, FixedAsset]
@@ -211,20 +212,6 @@ def print_fixed_assets(
         if gdpr:
             document.fixed_asset.material_duty_person = 'GDPR'
         print(document.fixed_asset.model_dump_json(by_alias=True, indent=2))
-
-def create_fixed_asset_document(assets: list [FixedAsset], nr: int) -> None:
-    for doc_name, ordinal, fixed_asset in assets:
-        if ordinal == nr:
-            try:
-                fa_document = FixedAssetDocument(
-                    # fixed_asset=fixed_asset,
-                    document_name=doc_name)
-            except AttributeError as e:
-                exit_with_info(
-                    f'Error:\n{fixed_asset.model_dump()}\n{doc_name}\n{e}'
-                    )
-
-    print(fa_document)
 
 def get_app_settings() -> AppSettings:
     """
