@@ -46,7 +46,7 @@ def setup_workbook(app_settings: AppSettings, files: list[str]) -> bool:
     if workbook:
         app_settings.last_column = obtain_last_data_column_from_worksheet(
             workbook.active
-            )
+        )
         return True
     return False
 
@@ -62,7 +62,8 @@ def get_workbook(filename) -> Workbook:
         workbook = load_workbook(filename, read_only=True)
     except FileNotFoundError:
         exit_with_info(
-            f'Cannot find {filename}.\nPlease check your settings.')
+            f'Cannot find {filename}.\nPlease check your settings.'
+        )
     return workbook
 
 def obtain_cell_values_from_workbook(
@@ -110,11 +111,18 @@ def obtain_last_data_column_from_worksheet(sheet: Worksheet) -> int:
         )
     return 0
 
-def read_workbook_data() -> list[list[Any]]:
+def read_workbook_data() -> list[dict[Any]]:
+    """
+    Reads the data from the workbook and returns it as a list of dictionaries.
+    This is an aesy way to import data from a new workbook - simply remove
+    the 'wb_filename' entry from setting.txt dictionary stored on your disk
+    and start the program adding 'wb' as the parameter.
+    """
     app_settings = AppSettings()
     if app_settings.wb_filename is None:
         files = app_settings.list_excel_files()
         setup_workbook(app_settings, files)
+
     workbook: Workbook = get_workbook(app_settings.wb_filename)  # type: ignore
     rows = obtain_cell_values_from_workbook(
         workbook,
