@@ -185,10 +185,13 @@ class FixedAsset(BaseModel):
         date_str = sub(r'\.|\/', '-', date_str)
         return date_str
 
+
 CELLS = ('D3', 'A5', 'A9', 'C9', 'C11', 'A21', 'A23', 'D23', 'A25')
 
 
 class FixedAssetDocument(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     document_name_unit: str
     document_name_serial: str
     fixed_asset: FixedAsset
@@ -196,6 +199,9 @@ class FixedAssetDocument(BaseModel):
     @field_validator('document_name_unit', mode='before')
     @classmethod
     def document_name_unit_parser(cls, value: str) -> str:
+        """
+        Parses the document name and removes any slashes in the name.
+        """
         if value == '' or value is None:
             return 'unknown_unit'
         if '/' in value:
