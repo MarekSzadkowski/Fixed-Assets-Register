@@ -4,6 +4,10 @@ from pathlib import Path
 from re import match, split, sub
 from typing import Any
 
+from openpyxl.workbook.workbook import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl import load_workbook
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -17,10 +21,14 @@ class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.txt'
     wb_filename: str | None = None
-    # sheet_name: str | None = None
     fa_filename: str | None = None
     fa_path: str = 'FA_documents'
     last_column: int | None = None
+    committee: list = Field(
+        min_length=1,
+        max_length=3,
+        default=['John Smith', 'Jane Doe']
+    )
     configured: bool = False
 
     def model_post_init(self, __context: Any) -> None:
@@ -32,10 +40,6 @@ class AppSettings(BaseModel):
 
             self.__dict__.update(config)
             self.data_path = Path(config.get('data_path'))
-
-        # It seems Pydantic requires use of __context to initialize the model,
-        # here it defaults to None
-        super().model_post_init(__context)
 
     def list_excel_files(self) -> list[str] | None:
         path = self.data_path.home()
@@ -49,7 +53,6 @@ class AppSettings(BaseModel):
                 "data_path": str(self.data_path),
                 "config_file": self.config_file,
                 "wb_filename": self.wb_filename,
-                # "sheet_name": self.sheet_name,
                 "fa_path": self.fa_path,
                 "fa_filename": self.fa_filename,
                 "last_column": self.last_column,
@@ -78,15 +81,15 @@ class FixedAsset(BaseModel):
     date: str
     name_of_item: str
     invoice: str
-    invoice_date: str
     issuer: str
     value: str
     material_duty_person: str
     psp: str
     cost_center: str
     inventory_number: str
+    invoice_date: str | None
 
-    @field_validator('invoice', 'invoice_date', 'issuer', mode='before')
+    @field_validator('invoice', 'issuer', mode='before')
     @classmethod
     def parse_default(cls, value: Any) -> str:
         if value is None:
@@ -121,7 +124,7 @@ class FixedAsset(BaseModel):
         Returns:
         str: The corrected date string.
         """
-        if value == '':
+        if value == '' or value is None:
             return value
         try:
             cls._parse_date(cls, value)
@@ -134,12 +137,6 @@ class FixedAsset(BaseModel):
                 raise ValueError(f'Invalid date format: {value}') from e
         return value
 
-    # Sometimes financial_source is a very complex string, in such cases values
-    # of 'invoice' and 'issuer' are usually not given, therefore None, which
-    # needed fixing so the class' constructor wouldn't complain.
-    # Now we can check it again. We DO NOT have a value of financial_source,
-    # but we can check the value of cost_center, which in such cases is copied to
-    # psp and cost_center.
     @field_validator('cost_center')
     @classmethod
     def date_after_parser(
@@ -147,6 +144,14 @@ class FixedAsset(BaseModel):
         cost_center: str,
         validated_values: ValidationInfo
     ) -> str:
+        """
+        Sometimes financial_source is a very complex string, in such cases
+        values of 'invoice' and 'issuer' are usually not given, therefore None,
+        which needed fixing so the class' constructor wouldn't complain.
+        Now we can check it again. We DO NOT have a value of financial_source,
+        but we can check the value of cost_center, which in such cases is copied
+        to the psp and cost_center fields.
+        """
         values = validated_values.data
         if  'date' in values:
             if values['date'] == '' and ' ' not in cost_center:
@@ -180,22 +185,49 @@ class FixedAsset(BaseModel):
         date_str = sub(r'\.|\/', '-', date_str)
         return date_str
 
+CELLS = ('D3', 'A5', 'A9', 'C9', 'C11', 'A21', 'A23', 'D23', 'A25')
+
+
 class FixedAssetDocument(BaseModel):
     document_name_unit: str
     document_name_serial: str
     fixed_asset: FixedAsset
-    FA_TEMPLATE: str = 'FA_template.xlsx'
-    committee: list = Field(
-        min_length=1,
-        max_length=3,
-        default=['John Smith', 'Jane Doe']
-    )
 
-class BadDateFormat(Exception):
-    """
-    Raised if the date is not in the correct format
-    """
-    def __init__(self, date: str):
-        self.date = date
-        self.message = f'Invalid date format: {date}'
-        super().__init__(self.message)
+    @field_validator('document_name_unit', mode='before')
+    @classmethod
+    def document_name_unit_parser(cls, value: str) -> str:
+        if value == '' or value is None:
+            return 'unknown_unit'
+        if '/' in value:
+            value = sub(r'\/', '_', value)
+        return value
+
+    def _populate_worksheet(self, wb: Workbook) -> None:
+        """
+        Creates a new worksheet that makes the fixed asset document.
+        """
+        sheet: Worksheet = wb.active
+        fixed_asset = self.fixed_asset.model_dump()
+        invoice_date = fixed_asset.pop('invoice_date', None)
+        if invoice_date is not None:
+            fixed_asset['invoice'] = f'{
+                fixed_asset["invoice"]} of {invoice_date
+            }'
+        cells = dict(zip(CELLS, fixed_asset.values()))
+        for cell, value in cells.items():
+            sheet[cell] = value
+
+    def generate_document(self) -> None:
+        """
+        Makes the fixed asset document.
+        """
+        settings = AppSettings()
+        template_filename = Path(settings.fa_filename)
+        document_name = f'{
+            self.document_name_unit}-{self.document_name_serial
+        }'
+
+        document: Workbook = load_workbook(template_filename)
+        self._populate_worksheet(document)
+        document.active.title = document_name
+        document.save(Path(f'{settings.fa_path}/{document_name}.xlsx'))

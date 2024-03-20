@@ -46,7 +46,7 @@ def setup_workbook(app_settings: AppSettings, files: list[str]) -> bool:
     if workbook:
         app_settings.last_column = obtain_last_data_column_from_worksheet(
             workbook.active
-        )
+            )
         return True
     return False
 

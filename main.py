@@ -3,7 +3,7 @@
 import click
 
 from register.functions import (
-    create_fixed_asset_document,
+    generate_fixed_asset_document,
     get_app_settings,
     load_fixed_assets,
     print_fixed_assets,
@@ -39,12 +39,16 @@ def report() -> None:
     print_fixed_assets(fixed_assets, True)
 
 @cli.command()
-def fa(number: int) -> None:
+# @cli.argument('serial')
+# def fa(serial: str) -> None:
+def fa() -> None:
     """
-    Still to do - throws an error ATM
+    Still to do - serial is hardcoded for now
     """
+    serial = '--all'
+
     fixed_assets = load_fixed_assets()
-    create_fixed_asset_document(fixed_assets, number)
+    generate_fixed_asset_document(fixed_assets, serial)
 # pylint: disable=fixme
 # @cli.command()
 # def search(item: str) -> None:

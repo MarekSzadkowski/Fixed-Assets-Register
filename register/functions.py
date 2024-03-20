@@ -1,4 +1,5 @@
 from itertools import islice
+from multiprocessing import Pool
 from pickle import dump, load
 from re import match
 from typing import Any
@@ -122,6 +123,7 @@ def select_fixed_asset_documents(
         serial = get_serial(row['inventory_number'])
         if not serial or not set_financial_source(row):
             continue
+
         try:
             fixed_asset = create_fixed_asset(row)
         except ValidationError as e:
@@ -129,16 +131,11 @@ def select_fixed_asset_documents(
                 f'\nError at ordinal_number {row['ordinal_number']}:\n\n'
                 + f'{e}:\n\n{row}'
             )
-        if row['unit']:
-            fixed_asset_document = FixedAssetDocument(
-                document_name_unit=row['unit'],
-                document_name_serial=serial,
-                fixed_asset=fixed_asset
-            )
-        else:
-            exit_with_info(
-                f'No unit specified in row {row["ordinal_number"]}.'
-            )
+        fixed_asset_document = FixedAssetDocument(
+            document_name_unit=row['unit'],
+            document_name_serial=serial,
+            fixed_asset=fixed_asset
+        )
 
         fixed_asset_documents.append(fixed_asset_document)
     return fixed_asset_documents
@@ -205,6 +202,14 @@ def print_fixed_assets(
         fixed_assets_documents: list[FixedAssetDocument],
         gdpr: bool = False,
     ) -> None:
+    """
+    Prints all data in the DB
+
+    Parameters:
+    fixed_assets_documents (list of FixedAssetDocument objects).
+    gdpr (bool). If True, hide material duty person in the output,
+    printing 'GDPR' - General Data Protection Regulation.
+    """
     for document in fixed_assets_documents:
         print(
             f'{document.document_name_unit}-{document.document_name_serial}'
@@ -212,6 +217,36 @@ def print_fixed_assets(
         if gdpr:
             document.fixed_asset.material_duty_person = 'GDPR'
         print(document.fixed_asset.model_dump_json(by_alias=True, indent=2))
+
+def generate_document(fixed_asset_document: FixedAssetDocument) -> None:
+    try:
+        fixed_asset_document.generate_document()
+    except (
+        FileExistsError,
+        FileNotFoundError,
+        OSError,
+        PermissionError,
+        ValueError,
+    ) as e:
+        exit_with_info(f'Error: {e}\n{fixed_asset_document}')
+
+def generate_fixed_asset_document(
+        fixed_asset_documents: list[FixedAssetDocument],
+        serial: str,
+    ) -> None:
+    """
+    Makes the fixed asset document (Excel file) based on the passed serial.
+    """
+    if serial == '--all':
+        documents_to_generate = fixed_asset_documents
+    else:
+        documents_to_generate = [
+            document for document in fixed_asset_documents
+            if document.document_name_serial == serial
+        ]
+
+    with Pool() as p:
+        p.map(generate_document, documents_to_generate)
 
 def get_app_settings() -> AppSettings:
     """
@@ -222,6 +257,7 @@ def get_app_settings() -> AppSettings:
     except ValidationError as e:
         exit_with_info(f'Error: {e}')
 
+    print('Please wait while your Excel files are being looked for...')
     files = app_settings.list_excel_files()
     if not files:
         exit_with_info('Cannot find any Excel file.')
