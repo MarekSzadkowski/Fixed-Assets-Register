@@ -49,17 +49,19 @@ def fa() -> None:
 
     fixed_assets = load_fixed_assets()
     generate_fixed_asset_document(fixed_assets, serial)
-# pylint: disable=fixme
-# @cli.command()
-# def search(item: str) -> None:
-#     """
-#     TODO
-#     """
-#     match item:
-#         case '' : return None
-#         case 1 : fixed_assets = load_fixed_assets()
 
-#     return fixed_assets
+@cli.command()
+def search(item: str) -> None:
+    """
+    Search for item in the DB
+    """
+    fixed_assets = load_fixed_assets()
+
+    match item:
+        case 'date' : return None
+        case 'serial' : return None
+
+    return fixed_assets
 
 @cli.command()
 def config():
