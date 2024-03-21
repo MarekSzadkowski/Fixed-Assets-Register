@@ -221,17 +221,27 @@ class FixedAssetDocument(BaseModel):
         for cell, value in cells.items():
             sheet[cell] = value
 
+    @classmethod
+    def _load_template(cls) -> None:
+        """
+        Loads the template file.
+        """
+        settings = AppSettings()
+        template_filename = Path(settings.fa_filename)
+        try:
+            document: Workbook = load_workbook(template_filename)
+            return (document, settings.fa_path)
+        except ValueError as e:
+            raise FileNotFoundError('Template file not found.') from e
+
     def generate_document(self) -> None:
         """
         Makes the fixed asset document.
         """
-        settings = AppSettings()
-        template_filename = Path(settings.fa_filename)
+        document, path= self._load_template()
+        self._populate_worksheet(document)
         document_name = f'{
             self.document_name_unit}-{self.document_name_serial
         }'
-
-        document: Workbook = load_workbook(template_filename)
-        self._populate_worksheet(document)
         document.active.title = document_name
-        document.save(Path(f'{settings.fa_path}/{document_name}.xlsx'))
+        document.save(Path(f'{path}/{document_name}.xlsx'))
