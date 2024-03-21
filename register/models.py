@@ -165,10 +165,9 @@ class FixedAsset(BaseModel):
         Parameters:
         date (str): The input date string to be checked.
         """
-        if date_str == 'appendix':
-            return date_str
         if not match(DATE_PATTERN, date_str):
             raise ValueError(date_str)
+        return date_str
 
     def _format_date(self, date_str: str) -> str:
         """
@@ -216,9 +215,8 @@ class FixedAssetDocument(BaseModel):
         fixed_asset = self.fixed_asset.model_dump()
         invoice_date = fixed_asset.pop('invoice_date', None)
         if invoice_date is not None:
-            fixed_asset['invoice'] = f'{
-                fixed_asset["invoice"]} of {invoice_date
-            }'
+            fixed_asset['invoice'] = f'{fixed_asset["invoice"]}' \
+            + f' on {invoice_date}'
         cells = dict(zip(CELLS, fixed_asset.values()))
         for cell, value in cells.items():
             sheet[cell] = value
