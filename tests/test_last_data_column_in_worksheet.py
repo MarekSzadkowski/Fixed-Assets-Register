@@ -5,6 +5,15 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from ..register.workbook import obtain_last_data_column_from_worksheet
 
+def test_new_worksheet_created():
+    """
+    Test if new worksheet is created
+    """
+    wb: Workbook = Workbook()
+    assert isinstance(wb.active, Worksheet)
+    wb.create_sheet(title='Test', index=0)
+    assert wb.active.title == 'Test'
+
 def test_last_column_in_workshhet():
     '''
     Test if returned value is 3, as function
