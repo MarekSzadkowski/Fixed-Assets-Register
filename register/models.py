@@ -17,6 +17,10 @@ from pydantic import (
 )
 from pydantic.alias_generators import to_camel
 
+
+COMMITTEE = ['John Smith', 'Jane Doe']
+
+
 class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.txt'
@@ -27,7 +31,7 @@ class AppSettings(BaseModel):
     committee: list = Field(
         min_length=1,
         max_length=3,
-        default=['John Smith', 'Jane Doe']
+        default=COMMITTEE
     )
     configured: bool = False
 
