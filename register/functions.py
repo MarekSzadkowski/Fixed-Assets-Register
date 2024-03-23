@@ -222,13 +222,12 @@ def generate_document(fixed_asset_document: FixedAssetDocument) -> None:
     try:
         fixed_asset_document.generate_document()
     except (
-        FileExistsError,
         FileNotFoundError,
         OSError,
-        PermissionError,
+        KeyboardInterrupt,
         ValueError,
     ) as e:
-        exit_with_info(f'Error: {e}\n{fixed_asset_document}')
+        raise RuntimeError(f'{e}') from e
 
 def generate_fixed_asset_document(
         fixed_asset_documents: list[FixedAssetDocument],
@@ -246,7 +245,11 @@ def generate_fixed_asset_document(
         ]
 
     with Pool() as p:
-        p.map(generate_document, documents_to_generate)
+        try:
+            p.map(generate_document, documents_to_generate)
+        except RuntimeError as e:
+            p.terminate()
+            exit_with_info(f'Error: {e}')
 
 def get_app_settings() -> AppSettings:
     """
