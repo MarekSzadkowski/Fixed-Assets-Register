@@ -91,7 +91,11 @@ class FixedAsset(BaseModel):
     psp: str
     cost_center: str
     inventory_number: str
+    use_purpose: str
+    serial_number: str
     invoice_date: str | None
+    id_vim: str
+
 
     @field_validator('invoice', 'issuer', mode='before')
     @classmethod
@@ -100,7 +104,13 @@ class FixedAsset(BaseModel):
             return 'appendix'
         return value
 
-    @field_validator('date', 'material_duty_person', mode='before')
+    @field_validator('date',
+                     'material_duty_person',
+                     'use_purpose',
+                     'serial_number',
+                     'id_vim',
+                     mode='before',
+    )
     @classmethod
     def parse_value(cls, value: Any) -> str:
         if value is None:
@@ -110,6 +120,20 @@ class FixedAsset(BaseModel):
     @field_validator('date', 'invoice_date', mode='before')
     @classmethod
     def before_date_parser(cls, date: str) -> str:
+        """
+        Validates the 'date' and 'invoice_date' fields.
+
+        This is the first step in the validation process as pydantic does it
+        this way. Notece the mode='before' is used. Although this is the third
+        'before' validator, it goes as the first - the order is important.
+
+        Args:
+            date, invoice_date (datetime): The datetime object to be validated.
+            mode (str): The validation mode.
+
+        Returns:
+            str: The validated date value in the format 'dd-mm-yyyy'.
+        """
         if isinstance(date, datetime):
             return date.strftime('%d-%m-%Y')
         return date
@@ -120,13 +144,17 @@ class FixedAsset(BaseModel):
         """
         Usually excel's date is a datetime object, but sometimes may be given
         as a string not complying with the actual standards, e.g. as
-        'date, date' literals. In this case the former literal is taken.
+        'date, date' literals. In this case the former one is taken.
 
         Parameters:
         date (str | None): The input date string to be corrected.
 
         Returns:
         str: The corrected date string.
+
+        Raises:
+        ValueError: If the date was given as a string but not
+        in the correct format.
         """
         if value == '' or value is None:
             return value
@@ -189,7 +217,20 @@ class FixedAsset(BaseModel):
         return date_str
 
 
-CELLS = ('D3', 'A5', 'A9', 'C9', 'C11', 'A21', 'A23', 'D23', 'A25')
+CELLS = (
+    'D3',
+    'A5',
+    'A9',
+    'C9',
+    'C11',
+    'A21',
+    'A23',
+    'D23',
+    'A25',
+    'A11',
+    'A13',
+    'D27',
+)
 
 
 class FixedAssetDocument(BaseModel):

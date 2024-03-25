@@ -21,6 +21,9 @@ INDEXES = {
     'psp': 2,
     'cost_center': 2,
     'inventory_number': 2,
+    'use_purpose': 14,
+    'serial_number': 15,
+    'id_vim': 1,
 }
 
 
