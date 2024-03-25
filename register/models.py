@@ -93,8 +93,8 @@ class FixedAsset(BaseModel):
     inventory_number: str
     use_purpose: str
     serial_number: str
-    invoice_date: str | None
     id_vim: str
+    invoice_date: str | None
 
 
     @field_validator('invoice', 'issuer', mode='before')
@@ -252,16 +252,20 @@ class FixedAssetDocument(BaseModel):
             value = sub(r'\/', '_', value)
         return value
 
-    def _populate_worksheet(self, wb: Workbook) -> None:
+    @classmethod
+    def _populate_worksheet(
+            cls,
+            sheet: Worksheet,
+            fixed_asset: dict[str, Any]
+        ) -> None:
         """
         Creates a new worksheet that makes the fixed asset document.
         """
-        sheet: Worksheet = wb.active
-        fixed_asset = self.fixed_asset.model_dump()
-        invoice_date = fixed_asset.pop('invoice_date', None)
-        if invoice_date is not None:
-            fixed_asset['invoice'] = f'{fixed_asset["invoice"]}' \
-            + f' on {invoice_date}'
+        if invoice_date := fixed_asset.pop('invoice_date', None):
+            fixed_asset['invoice'] = \
+                f'{fixed_asset["invoice"]} on {invoice_date}'
+        if fixed_asset['id_vim'] != '':
+            fixed_asset['id_vim'] = f'ID VIM: {fixed_asset["id_vim"]}'
         cells = dict(zip(CELLS, fixed_asset.values()))
         for cell, value in cells.items():
             sheet[cell] = value
@@ -282,9 +286,15 @@ class FixedAssetDocument(BaseModel):
     def generate_document(self) -> None:
         """
         Makes the fixed asset document.
+
+        Notice the variable 'document' we use here is a Workbook object,
+        not FixedAssetDocument.
         """
-        document, path= self._load_template()
-        self._populate_worksheet(document)
+        document, path = self._load_template()
+        self._populate_worksheet(
+            document.active,
+            self.fixed_asset.model_dump()
+        )
         document_name = f'{
             self.document_name_unit}-{self.document_name_serial
         }'
