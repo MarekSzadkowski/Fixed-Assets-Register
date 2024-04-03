@@ -116,11 +116,10 @@ def select_fixed_asset_documents(
         inventory_number = row['inventory_number']
 
         if (ordinal_number is None or inventory_number is None
-            or skip_on_pattern(inventory_number)
             and i > 1 and ordinal_number == rows[i - 1]['ordinal_number']):
             continue
 
-        serial = get_serial(row['inventory_number'])
+        serial = get_serial(inventory_number)
         if not serial or not set_financial_source(row):
             continue
 

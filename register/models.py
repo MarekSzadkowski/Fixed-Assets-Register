@@ -295,8 +295,7 @@ class FixedAssetDocument(BaseModel):
             document.active,
             self.fixed_asset.model_dump()
         )
-        document_name = f'{
-            self.document_name_unit}-{self.document_name_serial
-        }'
+        document_name = \
+            f'{self.document_name_unit}-{self.document_name_serial}'
         document.active.title = document_name
         document.save(Path(f'{path}/{document_name}.xlsx'))
