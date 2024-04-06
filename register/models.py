@@ -7,6 +7,7 @@ from typing import Any
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import load_workbook
+from openpyxl.styles import Font
 
 from pydantic import (
     BaseModel,
@@ -259,13 +260,17 @@ class FixedAssetDocument(BaseModel):
             fixed_asset: dict[str, Any]
         ) -> None:
         """
-        Creates a new worksheet that makes the fixed asset document.
+        Populates the worksheet with the fixed asset data.
+        Additionaly, if "fixed_asset['id_vim']" value is set, we change
+        the color of its cell (D27, which is outside of the document) to grey.
         """
         if invoice_date := fixed_asset.pop('invoice_date', None):
             fixed_asset['invoice'] = \
                 f'{fixed_asset["invoice"]} on {invoice_date}'
         if fixed_asset['id_vim'] != '':
             fixed_asset['id_vim'] = f'ID VIM: {fixed_asset["id_vim"]}'
+            id_vim_cell = sheet['D27']
+            id_vim_cell.font = Font(color='00969696')
         cells = dict(zip(CELLS, fixed_asset.values()))
         for cell, value in cells.items():
             sheet[cell] = value
