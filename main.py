@@ -16,7 +16,7 @@ from register.workbook import read_workbook_data
 def cli(ctx):
     """
     This allows to use our proggie w/o any parameter,
-    specyfying the default one.
+    specifying the default one.
     """
     if ctx.invoked_subcommand is None:
         report()

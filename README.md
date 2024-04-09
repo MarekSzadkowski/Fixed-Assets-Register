@@ -1,31 +1,57 @@
 # Fixed Assets Register
-<br><br>
-Creates Fixed Asset documents database 
-Works with Excel files where data is stored.
-<br>
-The workbook I was given had following 16 columns:<br>
-###### ordinal number:
-    it represents an invoice or a group of them,
-    may repeat itself many times,
-    may also be skipped (None), **AFTER** it has been specified once.
-###### unused here<br>
-###### inventory number<br>
-###### financial source
-    probably the most important column in the workbook,
-    as it constitutes the fields of psp and cost_center.
-###### invoice number<br>
-###### invoice date<br>
-###### name of a product/asset<br>
-###### quantity
-    uusally 1
-###### price<br>
-###### value
-    of the two above (formula), **only this column is used here**
-###### producent/supplier<br>
-###### registering date
-    when the asset was accepted to the register
-###### unit
-    the devision an asset belongs to
-###### material duty person<br>
-###### 15-16
-    unused here
+
+## Purpose
+
+Written for my wife, entirely in Python, a small program designed to help her and her unit to keep track of their **fixed asset documents**.
+
+The whole idea is based on a premise: *"Excel is everywhere"*. Well, I wouldn't know but in short, this is what this program does: It imports data from an Excel file and stores it in a simple, pickle-formatted DB file. When need a fixed asset document is created, which of course is yet another Excel file. :)
+
+For me it was also an opportunity to create an entry in my portfolio to present some python technics used, like pooling or ...
+
+```python
+    for row in rows:
+        yield {key: row[index] for key, index in INDEXES.items()}
+```
+
+... working with a generator while remapping excel's rows to dictionaries - a preferred, pythonic way to present data structures.
+
+It utilizes the power of Openpyxl and Pydantic.
+
+The picture below shows how such document looks like.
+
+![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
+
+### Instalation
+
+Make sure you have Python installed, the program runs with version 3.10+. Then simply go through the steps below.
+
+1. Clone this repository with: **git clone** [https://github.com/MarekSzadkowski/Fixed-Assets-Register.git](https://github.com/MarekSzadkowski/Fixed-Assets-Register.git). This will create Fixed-Assets-Register directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
+2. Go to this directory: cd Fixed-Assets-Register
+3. Create Python's environment: python -m venv .env
+4. Activate it - on Linux and Mac: source .env/bin/activate, on Windows: .env\Scripts\activate
+5. Install requirements: pip install -r requirements.txt
+
+Voila! You are ready to go.
+
+### Usage
+
+On Linux and Mac just run it: ./main.py \[parameter\], on Windows however you must use: python main.py \[parameter\]
+
+First run the program with the **config** parameter. It will create a settings file called settings.txt
+
+As you saw above you may skip a parameter, in this case the program would call the report function which dumps the content of DB to the screen. However if no data exists yet, it stops with according message.
+
+### TODO
+
+1. Search function
+2. Parameterization of fa parameter - it can NOT create just 1 or 2 documents yet, probably giving it a better name.
+
+### Known issues
+
+ATM the program does its purpose, there are however some issues related with new fields added to workbook, therefore all tests related to Pydantic will fail now.
+
+If you happen to find a bug please fil free to file it through Issue button above.
+
+### Tweaking the program
+
+If you would like to modify the program to import your excel-generated documents, just modify **INDEXES** in register.wordbook.py according to your needs. Modifying the FixedAsset class (register.models.py) and its validation methods may be needed too.
