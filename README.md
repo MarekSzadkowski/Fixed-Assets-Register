@@ -4,9 +4,9 @@
 
 Written for my wife, entirely in Python, a small program designed to help her and her unit to keep track of their **fixed asset documents**.
 
-The whole idea is based on a premise: *"Excel is everywhere"*. Well, I wouldn't know but in short, this is what the program does: It imports data from an Excel file and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which of course is yet another Excel file.:smiley:
+The whole idea is based on a premise: *"Excel is everywhere"*. Well, I wouldn't know but in short, this is what this program does: It imports data from an Excel file and stores it in a simple, pickle-formatted DB file. When need a fixed asset document is created, which of course is yet another Excel file. :)
 
-For me it was also an opportunity to create an entry in my portfolio to present some python techniques used, like pooling or ...
+For me it was also an opportunity to create an entry in my portfolio to present some python technics used, like pooling or ...
 
 ```python
     for row in rows:
@@ -25,10 +25,10 @@ The picture below shows how such document looks like.
 
 Make sure you have Python installed, the program runs with version 3.10+. Then simply go through the steps below.
 
-1. Clone this repository with: ```sh **git clone** [https://github.com/MarekSzadkowski/Fixed-Assets-Register.git](https://github.com/MarekSzadkowski/Fixed-Assets-Register.git)```. This will create Fixed-Assets-Register directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
-2. Go to this directory: ```sh cd Fixed-Assets-Register```
-3. Create Python's environment: ```sh python -m venv .env```
-4. Activate it - on Linux and Mac:```sh source .env/bin/activate```, on Windows: ```sh .env\Scripts\activate```
+1. Clone this repository with: **git clone** [https://github.com/MarekSzadkowski/Fixed-Assets-Register.git](https://github.com/MarekSzadkowski/Fixed-Assets-Register.git). This will create Fixed-Assets-Register directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
+2. Go to this directory: cd Fixed-Assets-Register
+3. Create Python's environment: python -m venv .env
+4. Activate it - on Linux and Mac: source .env/bin/activate, on Windows: .env\Scripts\activate
 5. Install requirements: pip install -r requirements.txt
 
 Voila! You are ready to go.
@@ -39,11 +39,6 @@ On Linux and Mac just run it: ./main.py \[parameter\], on Windows however you mu
 
 First run the program with the **config** parameter. It will create a settings file called settings.txt
 
-Other parameters are:
-
-1. wb - it imports the wordbook data
-2. fa - creates fixed asset document(s)
-
 As you saw above you may skip a parameter, in this case the program would call the report function which dumps the content of DB to the screen. However if no data exists yet, it stops with according message.
 
 ### TODO
@@ -53,9 +48,9 @@ As you saw above you may skip a parameter, in this case the program would call t
 
 ### Known issues
 
-ATM the program does its purpose, there are however some issues related to new fields added to workbook, therefore all tests related to Pydantic will fail now.
+ATM the program does its purpose, there are however some issues related with new fields added to workbook, therefore all tests related to Pydantic will fail now.
 
-If you happen to find a bug please feel free to file it through **Issue** button above.
+If you happen to find a bug please fil free to file it through Issue button above.
 
 ### Tweaking the program
 
