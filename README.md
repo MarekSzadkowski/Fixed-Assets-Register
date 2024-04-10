@@ -43,7 +43,7 @@ This will create Fixed-Assets-Register directory with files downloaded from Gith
 ```sh
    source .env/bin/activate,
 ```
-    on Windows:
+on Windows:
 ```sh
    .env\Scripts\activate
 ```
