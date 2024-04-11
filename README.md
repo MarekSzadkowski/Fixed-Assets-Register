@@ -2,9 +2,13 @@
 
 ## Purpose
 
-Written for my wife, entirely in Python, a small program designed to help her and her unit to keep track of their **fixed asset documents**.
+Written for commercial use by my wife, entirely in Python, a small script designed to help her and her unit to keep track of their fixed asset documents.
 
-The whole idea is based on a premise: *"Excel is everywhere"*. Well, I wouldn't know but in short, this is what this program does: It imports data from an Excel file and stores it in a simple, pickle-formatted DB file. When need a fixed asset document is created, which of course is yet another Excel file. :smiley:
+Since in the corporate world "Excel is everywhere", this Python script imports the data from an 
+Excel file and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which is another Excel file. For this purpose, the script utilizes the power of Openpyxl and Pydantic, as well as basic tests written in pytest.
+
+The picture below shows how such document looks like.
+![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
 
 For me it was also an opportunity to create an entry in my portfolio to present some python techniques used, like pooling or ...
 
@@ -14,12 +18,6 @@ For me it was also an opportunity to create an entry in my portfolio to present 
 ```
 
 ... working with a generator while remapping excel's rows to dictionaries - a preferred, pythonic way to present data structures.
-
-It utilizes the power of Openpyxl and Pydantic.
-
-The picture below shows how such document looks like.
-
-![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
 
 ### Installation
 
@@ -71,7 +69,7 @@ As you saw above you may skip a parameter, in this case the program would call t
 
 ### Known issues
 
-ATM the program does its purpose, there are however some issues related to new fields added to workbook, therefore all tests related to Pydantic will fail now.
+ATM the program does its purpose, there are however some issues related to some tests. The work is ongoing though.
 
 register.models.py, line 22: COMMITTEE - it is defined but not used anywhere - its usability is questionable ATM.
 

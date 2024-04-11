@@ -10,7 +10,8 @@ def test_model_deserialization():
     Tests if model is deserialized correctly
     """
     fixed_asset = FixedAsset.model_validate(model_constrains)
-    assert fixed_asset.model_dump() == expected_data
+    got = fixed_asset.model_dump()
+    assert got == expected_data
 
 def test_model_deserialization_json():
     """
@@ -18,13 +19,15 @@ def test_model_deserialization_json():
     """
     model_constrains_json = dumps(model_constrains)
     fixed_asset = FixedAsset.model_validate_json(model_constrains_json)
-    assert fixed_asset.model_dump() == expected_data
+    got = fixed_asset.model_dump()
+    assert got == expected_data
 
 def test_model_deserialization_with_extra_field_added():
     """
     Here we only check if the deserialization fails with an extra field
     added to the model. Earlier, in the FixedAsset's ConficDict we
     supressed any extra data.
+    See the class definition in register/models.py for more details.
     """
     model_constrains_with_extra_field_added = expected_data.copy()
     model_constrains_with_extra_field_added.update({
@@ -34,3 +37,5 @@ def test_model_deserialization_with_extra_field_added():
         FixedAsset.model_validate(model_constrains_with_extra_field_added)
     except ValidationError:
         assert True
+    else:
+        assert False

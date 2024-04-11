@@ -4,10 +4,13 @@ model_constrains = {
     "invoice": "F/174/06/2023",
     "issuer": "\"STATIM LLC\" Peter Pan, 123456789 ",
     "value": "1537.99",
-    "materialDutyPerson": "GDPR         \n\n     ",
+    "materialDutyPerson": "Johny B.         \n\n     ",
     "psp": "0801-D111-00003-01 ",
     "costCenter": "    1110300   ",
     "inventoryNumber": "           487-T-1110300-111100140070",
+    "usePurpose": "  science ",
+    "serialNumber": "12zx-56Qk7",
+    "idVim": "54260",
     "invoiceDate": None,
 }
 
@@ -17,10 +20,13 @@ expected_data = {
     'invoice': 'F/174/06/2023',
     'issuer': '"STATIM LLC" Peter Pan, 123456789',
     'value': '1537.99',
-    'material_duty_person': 'GDPR',
+    'material_duty_person': 'Johny B.',
     'psp': '0801-D111-00003-01',
     'cost_center': '1110300',
     'inventory_number': '487-T-1110300-111100140070',
+    'use_purpose': 'science',
+    'serial_number': '12zx-56Qk7',
+    'id_vim': '54260',
     'invoice_date': None,
 }
 

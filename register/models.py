@@ -96,8 +96,6 @@ class FixedAsset(BaseModel):
     serial_number: str
     id_vim: str
     invoice_date: str | None
-
-
     @field_validator('invoice', 'issuer', mode='before')
     @classmethod
     def parse_default(cls, value: Any) -> str:
@@ -125,7 +123,7 @@ class FixedAsset(BaseModel):
         Validates the 'date' and 'invoice_date' fields.
 
         This is the first step in the validation process as pydantic does it
-        this way. Notece the mode='before' is used. Although this is the third
+        this way. Notice the mode='before' is used. Although this is the third
         'before' validator, it goes as the first - the order is important.
 
         Args:
@@ -141,7 +139,7 @@ class FixedAsset(BaseModel):
 
     @field_validator('date', 'invoice_date')
     @classmethod
-    def after_date_parser(cls, value: str) -> str:
+    def after_date_parser(cls, value: str | None) -> str:
         """
         Usually excel's date is a datetime object, but sometimes may be given
         as a string not complying with the actual standards, e.g. as
