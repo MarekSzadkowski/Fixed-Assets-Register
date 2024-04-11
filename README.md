@@ -8,7 +8,6 @@ Since in the corporate world *"Excel is everywhere"*, this Python script imports
 Excel file and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which is another Excel file. For this purpose, the script utilizes the power of Openpyxl and Pydantic, as well as basic tests written in pytest.
 
 The picture below shows how such document looks like.
-
 ![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
 
 For me it was also an opportunity to create an entry in my portfolio to present some python techniques used, like pooling or ...
@@ -28,7 +27,7 @@ Make sure you have Python installed, the program runs with version 3.10+. Then s
 ```sh
    git clone github.com/MarekSzadkowski/Fixed-Assets-Register.git
 ```
-This will create <span style="color:#EE7777">Fixed-Assets-Register</span> directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
+This will create  <span style="color:#EE7777;">Fixed-Assets-Register</span> directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
 
 2. Go to this directory:
 ```sh
