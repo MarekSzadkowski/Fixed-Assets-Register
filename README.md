@@ -21,7 +21,7 @@ The picture below shows how such document looks like.
 
 ![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
 
-### Instalation
+### Installation
 
 Make sure you have Python installed, the program runs with version 3.10+. Then simply go through the steps below.
 
