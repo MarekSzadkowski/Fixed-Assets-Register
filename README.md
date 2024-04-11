@@ -8,6 +8,7 @@ Since in the corporate world *"Excel is everywhere"*, this Python script imports
 Excel file and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which is another Excel file. For this purpose, the script utilizes the power of Openpyxl and Pydantic, as well as basic tests written in pytest.
 
 The picture below shows how such document looks like.
+
 ![Fixed Asset Document (excel)](fixed-asset-document.png "Fixed Asset Document")
 
 For me it was also an opportunity to create an entry in my portfolio to present some python techniques used, like pooling or ...
