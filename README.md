@@ -73,6 +73,8 @@ As you saw above you may skip a parameter, in this case the program would call t
 
 ATM the program does its purpose, there are however some issues related to new fields added to workbook, therefore all tests related to Pydantic will fail now.
 
+register.models.py, line 22: COMMITTEE - it is defined but not used anywhere - its usability is questionable ATM.
+
 If you happen to find a bug please fil free to file it through Issue button above.
 
 ### Tweaking the program
