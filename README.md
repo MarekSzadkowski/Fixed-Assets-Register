@@ -5,7 +5,7 @@
 Written for commercial use by my wife, entirely in Python, a small script designed to help her and her unit to keep track of their fixed asset documents.
 
 Since in the corporate world *"Excel is everywhere"*, this Python script imports the data from an 
-Excel file and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which is another Excel file. For this purpose, the script utilizes the power of Openpyxl and Pydantic, as well as basic tests written in pytest.
+[Excel file](Wordbook.md) and stores it in a simple, pickle-formatted DB file. When needed a fixed asset document is created, which is another Excel file. For this purpose, the script utilizes the power of Openpyxl and Pydantic, as well as basic tests written in pytest.
 
 The picture below shows how such document looks like.
 
