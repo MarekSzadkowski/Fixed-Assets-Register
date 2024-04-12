@@ -28,7 +28,7 @@ Make sure you have Python installed, the program runs with version 3.10+. Then s
 ```sh
    git clone github.com/MarekSzadkowski/Fixed-Assets-Register.git
 ```
-This will create  <span style="color:#EE7777">Fixed-Assets-Register</span> directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
+This will create *<span style="color:#EE7777">Fixed-Assets-Register</span>* directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
 
 2. Go to this directory:
 ```sh
