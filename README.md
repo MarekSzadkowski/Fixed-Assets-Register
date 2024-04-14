@@ -70,12 +70,10 @@ As you saw above you may skip a parameter, in this case the program would call t
 
 ### Known issues
 
-ATM the program does its purpose, there are however some issues related to some tests. The work is ongoing though.
-
 register.models.py, line 22: COMMITTEE - it is defined but not used anywhere - its usability is questionable ATM.
 
 If you happen to find a bug please fil free to file it through Issue button above.
 
 ### Tweaking the program
 
-If you would like to modify the program to import your excel-generated documents, just modify **INDEXES** in register.wordbook.py according to your needs. Modifying the FixedAsset class (register.models.py) and its validation methods may be needed too.
+If you would like to modify the script to import your excel-generated documents, just modify **INDEXES** in register.wordbook.py according to your needs. Modifying the FixedAsset class (register.models.py) and its validation methods may be needed too.
