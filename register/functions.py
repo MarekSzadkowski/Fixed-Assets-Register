@@ -37,8 +37,7 @@ def get_serial(inventory_number: str) -> str | None:
     incomplete stuff - something is currently being built and its costs are
     unknown yet, otherwise the matched string.
     """
-    matched = match(r'^\d{6}$', inventory_number[-6:])
-    if matched:
+    if matched := match(r'^\d{6}$', inventory_number[-6:]):
         return matched.string
     return None
 
@@ -174,9 +173,6 @@ def process_workbook_data(rows: list[tuple]) -> None:
     The latter means error in the provided data, so no dump is done.
     """
     selected_items = select_fixed_asset_documents(rows)
-    # if report:
-    #     pass
-        # print_report(report)
 
     # double_elements = check_duplicated_serials(selected_items)
     double_elements = None
