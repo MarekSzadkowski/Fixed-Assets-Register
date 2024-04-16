@@ -127,7 +127,7 @@ def select_fixed_asset_documents(
             fixed_asset = create_fixed_asset(row)
         except ValidationError as e:
             exit_with_info(
-                f'\nError at ordinal_number {row['ordinal_number']}:\n\n'
+                f"\nError at ordinal_number {row['ordinal_number']}:\n\n"
                 + f'{e}:\n\n{row}'
             )
         fixed_asset_document = FixedAssetDocument(
