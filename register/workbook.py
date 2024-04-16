@@ -105,9 +105,7 @@ def obtain_last_data_column_from_worksheet(sheet: Worksheet) -> int:
     Notice that this function is counting from 1 as openpyxl does.
     """
 
-    row = next(sheet.iter_rows(1, 1, 1, values_only=True), None)
-
-    if row:
+    if row := next(sheet.iter_rows(1, 1, 1, values_only=True), None):
         return next(
             (index - 1 for index, col in enumerate(row, 1) if col is None),
             len(row)
