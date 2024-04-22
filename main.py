@@ -22,7 +22,7 @@ def cli(ctx):
         report()
 
 @cli.command()
-def wb() -> None:
+def import_wb() -> None:
     """
     Imports workbook data to a simple DB (pickle)
     """
@@ -30,23 +30,28 @@ def wb() -> None:
     process_workbook_data(workbook_data)
 
 @cli.command()
-# @cli.option('--gdpr', is_flag=True)
-def report() -> None:
+@click.option('--gdpr', is_flag=True)
+def report(gdpr: bool = False) -> None:
     """
-    Prints all data in the DB
+    Prints all data in the DB.
+    
+    Parameters: --gdpr (bool).
+    If True, hides material duty person in the output,
+    GDPR stands for General Data Protection Regulation in the European Union.
     """
     fixed_assets = load_fixed_assets()
-    print_fixed_assets(fixed_assets, True)
+    print_fixed_assets(fixed_assets, gdpr)
 
 @cli.command()
-# @cli.argument('serial')
-# def fa(serial: str) -> None:
-def fa() -> None:
+@click.argument('serial')
+def create_document(serial: str) -> None:
     """
-    Still to do - serial is hardcoded for now
-    """
-    serial = '--all'
+    Makes the fixed asset document (Excel file) based on the passed serial.
 
+    Parameters:
+    serial (str): Serial number of the fixed asset.
+    Pass '--all' to generate all documents.
+    """
     fixed_assets = load_fixed_assets()
     generate_fixed_asset_document(fixed_assets, serial)
 
