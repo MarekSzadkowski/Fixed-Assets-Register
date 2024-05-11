@@ -48,8 +48,17 @@ class AppSettings(BaseModel):
 
     def list_excel_files(self) -> list[str] | None:
         path = self.data_path.home()
-        elements = path.rglob('*.xlsx')
-        return [str(e) for e in elements]
+        try:
+            elements = path.rglob('*.xlsx')
+        except (
+            FileNotFoundError,
+            OSError,
+            KeyboardInterrupt,
+            ValueError,
+        ) as e:
+            raise RuntimeError(f'{e}') from e
+
+        return [str(element) for element in elements]
 
     def save(self):
         if  self.configured:

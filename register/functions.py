@@ -256,9 +256,10 @@ def get_app_settings() -> AppSettings:
         exit_with_info(f'Error: {e}')
 
     print('Please wait while your Excel files are being looked for...')
-    files = app_settings.list_excel_files()
-    if not files:
-        exit_with_info('Cannot find any Excel file.')
+    try:
+        files = app_settings.list_excel_files()
+    except RuntimeError as e:
+        exit_with_info(f'Error: {e}')
 
     if app_settings.wb_filename is None:
         setup_workbook(app_settings, files)
@@ -266,7 +267,8 @@ def get_app_settings() -> AppSettings:
     if app_settings.fa_filename is None:
         index = user_input(
             files,
-            'Choose a file which is your fixed asset template you want to use',
+            'Please type in the number of a file which is ' \
+            + 'your fixed asset template you want to use',
         )
         app_settings.fa_filename = files[index]
 
