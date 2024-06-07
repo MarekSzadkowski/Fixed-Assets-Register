@@ -18,42 +18,48 @@ For me it was also an opportunity to create an entry in my portfolio to present 
         yield {key: row[index] for key, index in INDEXES.items()}
 ```
 
-... working with a generator while remapping excel's rows to dictionaries - a preferred, pythonic way to present data structures.
+... working with a generator while remapping excel's rows to dictionaries - a preferred, *pythonic* way to present data structures.
 
-### Installation
+## Installation
 
-Make sure you have Python installed, the program runs with version 3.10+. Then simply go through the steps below.
+Make sure you have git and Python installed, the script runs with python 3.11 and 3.12. Then simply go through the steps below.
 
 1. Clone this repository with:
 ```sh
    git clone https://github.com/MarekSzadkowski/Fixed-Assets-Register.git
 ```
-This will create *<span style="color:#EE7777">Fixed-Assets-Register</span>* directory with files downloaded from Github. If you don't have git installed on your computer, just install it or copy the files from here.
+This will create **`Fixed-Assets-Register`** directory with files downloaded from Github. You want to change this name to something else, otherwise the tests will not work. See more in the [Known Issues](#known-issues) section. Here I call it **`main`**.
 
-2. Go to this directory:
+2. Change the directory:
 ```sh
-   cd Fixed-Assets-Register
+   mv Fixed-Assets-Register main
 ```
-3. Create Python's environment:
+3. Go to the directory:
+```sh
+   cd main
+```
+4. Create Python's environment:
 ```sh
    python -m venv .env
 ```
-4. Activate it - on Linux and Mac:
+5. Activate it - on Linux and Mac:
 ```sh
-   source .env/bin/activate,
+   source .env/bin/activate
 ```
 on Windows:
 ```sh
    .env\Scripts\activate
 ```
-5. Install requirements:
+6. Install requirements:
 ```sh
    pip install -r requirements.txt
 ```
 
 Voila! You are ready to go.
 
-### Usage
+## Usage
+
+### TL;DR
 
 On Linux and Mac just run it: ./main.py \[parameter\], on Windows however you must use: python main.py \[parameter\]
 
@@ -63,17 +69,18 @@ Then import data from a workbook, issuing ./main wb and/or ./main fa respectivel
 
 As you saw above you may skip a parameter, in this case the program would call the report function which dumps the content of DB to the screen. However if no data exists yet, it stops with according message.
 
-### TODO
+## TODO
 
 1. Search function
-2. Parameterization of fa parameter - it can NOT create just 1 or 2 documents yet, probably giving it a better name.
 
-### Known issues
+## Known issues
 
 register.models.py, line 22: COMMITTEE - it is defined but not used anywhere - its usability is questionable ATM.
 
+Tests: You may know already the default name you get from GitHub is the one corresponding to the repository name - `Fixed-Assets-Register` in this case. After many tries I came to conclusion Pytest doesn't like hyphens in the name of the main directory, that's why if you don't change the default name and leave it as is tests will probably don't work for you as never worked for me.
+
 If you happen to find a bug please feel free to file it through Issue button above.
 
-### Tweaking the program
+## Tweaking the program
 
 If you would like to modify the script to import your excel-generated documents, just modify **INDEXES** in register.wordbook.py according to your needs. Modifying the FixedAsset class (register.models.py) and its validation methods may be needed too.

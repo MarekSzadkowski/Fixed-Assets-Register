@@ -58,7 +58,7 @@ def set_financial_source(row: dict[str, Any]) -> bool:
     If financial_source (row['financial_source']) is given (which is mostly true),
     it is translated to psp and cost_center repectivly.
     Sometimes financial_source may be given as a string however, if this is the
-    case we check if the strng starts with 'P' or 'p'.
+    case we check if the stirng starts with 'P' or 'p'.
     If it does, we return False - we don't need to create a FixedAsset document.
 
     Parameters:
