@@ -248,12 +248,24 @@ def generate_fixed_asset_document(
 
 def get_app_settings() -> AppSettings:
     """
-    Returns the complete AppSettings object depending on users input.
+    Checks if the app settings already exist and dies silently if the user
+    does not want to change them.
+    Otherwise, returns the complete AppSettings object depending on users input.
     """
     try:
         app_settings = AppSettings()
     except ValidationError as e:
         exit_with_info(f'Error: {e}')
+
+    if app_settings.wb_filename:
+        if user_input(
+            None,
+            f'You already use workbook: {app_settings.wb_filename}.\n' \
+            + 'Do you want to change it: y/n?'
+        ):
+            app_settings.wb_filename = None
+        else:
+            exit_with_info(None)
 
     print('Please wait while your Excel files are being looked for...')
     try:
@@ -261,8 +273,7 @@ def get_app_settings() -> AppSettings:
     except RuntimeError as e:
         exit_with_info(f'Error: {e}')
 
-    if app_settings.wb_filename is None:
-        setup_workbook(app_settings, files)
+    setup_workbook(app_settings, files)
 
     if app_settings.fa_filename is None:
         index = user_input(

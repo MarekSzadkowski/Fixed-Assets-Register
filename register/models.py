@@ -105,6 +105,8 @@ class FixedAsset(BaseModel):
     serial_number: str
     id_vim: str
     invoice_date: str | None
+
+
     @field_validator('invoice', 'issuer', mode='before')
     @classmethod
     def parse_default(cls, value: Any) -> str:
