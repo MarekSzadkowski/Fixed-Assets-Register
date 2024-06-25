@@ -27,7 +27,7 @@ def user_input(entries: list[str] | str | None, msg: str) -> int | str | None:
     """
     if entries is None:
         return input(msg) == 'y'
-    
+
     if isinstance(entries, list):
         for index, file in enumerate(entries, 1):
             print(f'[{index}] {file}')
