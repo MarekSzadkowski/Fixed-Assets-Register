@@ -275,14 +275,6 @@ def get_app_settings() -> AppSettings:
 
     setup_workbook(app_settings, files)
 
-    if app_settings.fa_filename is None:
-        index = user_input(
-            files,
-            'Please type in the number of a file which is ' \
-            + 'your fixed asset template you want to use',
-        )
-        app_settings.fa_filename = files[index]
-
     fa_path = user_input(
         app_settings.fa_path,
         'Enter the path where your fixed asset documents will be stored,\n'
@@ -290,6 +282,7 @@ def get_app_settings() -> AppSettings:
     )
     if fa_path not in {'', app_settings.fa_path}:
         app_settings.fa_path = fa_path
+        app_settings.fix_fa_path()
 
     app_settings.configured = True
     return app_settings

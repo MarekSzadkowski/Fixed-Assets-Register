@@ -26,7 +26,7 @@ class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.txt'
     wb_filename: str | None = None
-    fa_filename: str | None = None
+    fa_filename: str ='FA_template.xlsx'
     fa_path: str = 'FA_documents'
     last_column: int | None = None
     committee: list = Field(
@@ -37,6 +37,7 @@ class AppSettings(BaseModel):
     configured: bool = False
 
     def model_post_init(self, __context: Any) -> None:
+        self.fa_filename = str(self.data_path / self.fa_filename)
         self.fa_path = str(self.data_path / self.fa_path)
         filename = self.data_path / self.config_file
         if Path.is_file(filename):
@@ -77,6 +78,11 @@ class AppSettings(BaseModel):
                     dump(json_dict, config_file, indent=2)
             except OSError as e:
                 print(f'Write error: ({e})')
+
+    def fix_fa_path(self) -> None:
+        fa_path = self.data_path / self.fa_path
+        if not Path.is_dir(fa_path):
+            Path.mkdir(fa_path)
 
 
 DATE_PATTERN: str = r'^\d{2}-\d{2}-\d{4}$'
