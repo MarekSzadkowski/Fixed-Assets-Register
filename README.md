@@ -65,13 +65,17 @@ On Linux and Mac just run it: ./main.py \[parameter\], on Windows however you mu
 
 First run the program with the **config** parameter. It will create a settings file called settings.txt
 
-Then import data from a workbook, issuing ./main wb and/or ./main fa respectively.
+Then import data from a workbook, issuing `./main.py import-wb`.
+
+To create a Fixed Asset Document use `./main.py create-ducument serial`, where *serial* is the 6 digits you can take from the dump.
+
+You can also create documents for every record you have in your db - instead of *serial* use `--all`.
 
 As you saw above you may skip a parameter, in this case the program would call the report function which dumps the content of DB to the screen. However if no data exists yet, it stops with according message.
 
 ## TODO
 
-1. Search function
+1. Search function - not needed at the time being.
 
 ## Known issues
 
