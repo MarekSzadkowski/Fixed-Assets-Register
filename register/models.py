@@ -26,6 +26,7 @@ class AppSettings(BaseModel):
     data_path: Path = Path.cwd()
     config_file: str = 'settings.txt'
     wb_filename: str | None = None
+    sheetname: str | None = None
     fa_filename: str ='FA_template.xlsx'
     fa_path: str = 'FA_documents'
     last_column: int | None = None
@@ -68,6 +69,7 @@ class AppSettings(BaseModel):
                 "data_path": str(self.data_path),
                 "config_file": self.config_file,
                 "wb_filename": self.wb_filename,
+                "sheetname": self.sheetname,
                 "fa_path": self.fa_path,
                 "fa_filename": self.fa_filename,
                 "last_column": self.last_column,

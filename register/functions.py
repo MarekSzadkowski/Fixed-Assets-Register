@@ -282,7 +282,7 @@ def get_app_settings() -> AppSettings:
     )
     if fa_path not in {'', app_settings.fa_path}:
         app_settings.fa_path = fa_path
-        app_settings.fix_fa_path()
+    app_settings.fix_fa_path()
 
     app_settings.configured = True
     return app_settings

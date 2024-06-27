@@ -47,6 +47,12 @@ def setup_workbook(app_settings: AppSettings, files: list[str]) -> bool:
     app_settings.wb_filename = files[index]
     workbook = get_workbook(app_settings.wb_filename)
     if workbook:
+        if len(workbook.sheetnames) > 1:
+            index = user_input(
+                workbook.sheetnames,
+                'Choose a sheet you want to use',
+            )
+            app_settings.sheetname = workbook.sheetnames[index]
         app_settings.last_column = obtain_last_data_column_from_worksheet(
             workbook['Środki Trwałe']
         )
@@ -69,18 +75,17 @@ def get_workbook(filename) -> Workbook:
         )
     return workbook
 
-def obtain_cell_values_from_workbook(
-        wb: Workbook, max_col) -> list[dict] | None:
+def obtain_cell_values_from_worksheet(
+        sheet: Worksheet, max_col) -> list[dict] | None:
     """
     Returns cell values from given dimensions
 
     Parameters:
-    wb (Workbook): The current Excel file.
+    sheet (Worksheet): The sheet we retrieve data from.
     max_col (int): The last column in the given sheet obtained from
-    the function below.
+    the function 'obtain_last_data_column_from_worksheet'.
     """
 
-    sheet: Worksheet = cast(Worksheet, wb.active)
     rows = sheet.iter_rows(2, max_col=max_col, values_only=True)
     return list(process_rows(rows))
 
@@ -125,8 +130,8 @@ def read_workbook_data() -> list[dict[Any]]:
         setup_workbook(app_settings, files)
 
     workbook: Workbook = get_workbook(app_settings.wb_filename)  # type: ignore
-    rows = obtain_cell_values_from_workbook(
-        workbook,
+    rows = obtain_cell_values_from_worksheet(
+        cast(Worksheet, workbook[app_settings.sheetname]),
         app_settings.last_column
     )
     workbook.close()
