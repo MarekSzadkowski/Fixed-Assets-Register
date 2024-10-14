@@ -230,7 +230,7 @@ class FixedAsset(BaseModel):
         Returns:
         str: The corrected date string.
         """
-        date_str, _ = split(r'\,| ', date_str, 1)
+        date_str, _ = split(r'\,| ', date_str, maxsplit=1)
         date_str = sub(r'\.|\/', '-', date_str)
         return date_str
 
@@ -285,7 +285,7 @@ class FixedAssetDocument(BaseModel):
             fixed_asset['invoice'] = \
                 f'{fixed_asset["invoice"]} on {invoice_date}'
         if fixed_asset['id_vim'] != '':
-            fixed_asset['id_vim'] = f'ID VIM: {fixed_asset["id_vim"]}'
+            fixed_asset['id_vim'] = f'ID VIM: {fixed_asset['id_vim']}'
             id_vim_cell = sheet['D27']
             id_vim_cell.font = Font(color='00969696')
         cells = dict(zip(CELLS, fixed_asset.values()))
